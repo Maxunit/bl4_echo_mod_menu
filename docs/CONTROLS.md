@@ -18,8 +18,10 @@ rows have separate Minus, Slider and Plus targets; Confirm on the slider begins
 the mode where left/right adjusts rather than moving to another control.
 The focused option row is also marked and scrolled into view. At the first or
 last selectable item, scrolling includes the list's outer spacing so the thumb
-can reach the actual endpoint. If a row or introduction is taller than the
-viewport, keeping the focused control visible takes priority.
+can reach the actual endpoint. Mod cards, the language list and wrapped category
+tabs use the same behavior. If leading or trailing content would hide the
+selected row at an endpoint, keeping that row visible takes priority. Rows
+taller than the viewport keep their focused control visible instead.
 
 Focus memories are scoped to mod/category. Hidden and disabled controls are
 skipped. Moving a real cursor returns to cursor operation and cancels an

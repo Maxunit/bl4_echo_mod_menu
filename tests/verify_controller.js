@@ -243,6 +243,14 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(modPane.rail,modRail);assert.strictEqual(modPane.thumb,modThumb);
  assert.strictEqual(ends.state.positions[modPane.key],modPane.view.scrollTop);cases++;
 
+ // A card larger than the viewport may already cover the complete visible
+ // area. Repeated focus then keeps its position instead of bouncing between
+ // its upper and lower edge.
+ scrollingBox(ends.target('mod:scroll-1').node,modPane,12+3*95,400);
+ modPane.view.scrollTop=350;ends.ctx.echoSyncScroll(modPane,true);
+ ends.focus('mod:scroll-1');assert.strictEqual(modPane.view.scrollTop,350);
+ ends.ctx.echoControllerEnsureVisible(ends.state);assert.strictEqual(modPane.view.scrollTop,350);cases++;
+
  // Options are logical rows, including Minus/Slider/Plus. Reveal labels and
  // the complete row, then include section spacing/padding at either end.
  const rows=fixture(managerFile),rowMod=rows.state.catalog.mods[0];
@@ -262,6 +270,47 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  rows.focus('value:mod1:mode');assert.strictEqual(optionsPane.view.scrollTop,optionsPane.range);
  rows.focus('value:mod1:offset');assert.strictEqual(optionsPane.view.scrollTop,0);
  assert.strictEqual(JSON.stringify(rows.widget.DataModel),rows.modelBefore);assert.strictEqual(rows.pending.length,0);cases++;
+
+ // Endpoint alignment must preserve the whole row too. A visible centered
+ // control alone is not enough when a heading or trailing text is very long.
+ scrollGeometry(rows,optionsPane,600,220);
+ scrollingBox(rows.state.optionRows[0].row,optionsPane,100,160);
+ rows.ctx.echoControllerTargets(rows.state,'options').filter(item=>item.row==='offset')
+  .forEach(item=>scrollingBox(item.node,optionsPane,180,32));
+ rows.focus('value:mod1:offset');assert.strictEqual(optionsPane.view.scrollTop,40);
+ rows.tap('right');assert.strictEqual(optionsPane.view.scrollTop,40);
+ const firstFullRow=rows.state.optionRows[0].row.getBoundingClientRect();
+ assert(firstFullRow.top>=20&&firstFullRow.bottom<=240);cases++;
+
+ scrollingBox(rows.state.optionRows[2].row,optionsPane,340,160);
+ scrollingBox(rows.target('value:mod1:mode').node,optionsPane,420,32);
+ rows.focus('value:mod1:mode');assert.strictEqual(optionsPane.view.scrollTop,340);
+ const lastFullRow=rows.state.optionRows[2].row.getBoundingClientRect();
+ assert(lastFullRow.top>=20&&lastFullRow.bottom<=240);
+ rows.ctx.echoControllerEnsureVisible(rows.state);assert.strictEqual(optionsPane.view.scrollTop,340);cases++;
+
+ // A preceding preset is part of the same scroll pane. Moving into its first
+ // option keeps the normal minimum scroll; returning to the preset reveals
+ // the complete leading section spacing.
+ const presets=fixture(managerFile),presetPane=presets.state.paneCache['echo-settings'];
+ scrollGeometry(presets,presetPane,500,220);
+ scrollingBox(presets.state.optionRows[0].row,presetPane,160,100);
+ presets.ctx.echoControllerTargets(presets.state,'options').filter(item=>item.row==='offset')
+  .forEach(item=>scrollingBox(item.node,presetPane,190,32));
+ scrollingBox(presets.target('preset:mod1:camera:near').node,presetPane,40,30);
+ presetPane.view.scrollTop=100;
+ presets.focus('value:mod1:offset');assert.strictEqual(presetPane.view.scrollTop,100);
+ presets.focus('preset:mod1:camera:near');assert.strictEqual(presetPane.view.scrollTop,0);cases++;
+
+ // Wrapped categories have their own native scroll viewport. Include its
+ // outer padding at either end without selecting another category.
+ const tabs=ends.state.regions.categories,tabTargets=ends.ctx.echoControllerTargets(ends.state,'categories');
+ tabs._clientHeight=80;tabs._scrollHeight=tabTargets.length*50+12;
+ tabs._rect={left:0,top:20,width:280,height:80};tabs.scrollTop=0;
+ tabTargets.forEach((item,index)=>scrollingBox(item.node,{view:tabs},5+index*50,40));
+ ends.focus(tabTargets[tabTargets.length-1].id);assert.strictEqual(tabs.scrollTop,tabs.scrollHeight-tabs.clientHeight);
+ ends.focus(tabTargets[0].id);assert.strictEqual(tabs.scrollTop,0);
+ assert.strictEqual(ends.state.category,'camera');assert.strictEqual(ends.pending.length,0);cases++;
 
  // A translated description or introduction may exceed the viewport. An
  // endpoint snap must not hide the control just to expose the row's edge.

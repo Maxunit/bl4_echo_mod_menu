@@ -6,10 +6,13 @@
   rows with separate Minus / Slider / Plus controls.
 - Reach the actual scroll start/end at the first/last selectable item, including
   list padding, card margins and section spacing.
-- Apply the same endpoint behavior to the language list. Keep the focused
-  control visible when a long row or introduction cannot fit at an endpoint.
-- Check seven-card list bounds, complete option rows, tall content and retained
-  scrollbar identity with both original InputManager variants.
+- Apply the same endpoint behavior to the language list and wrapped category
+  tabs, using one shared scroll calculation.
+- Preserve the full selected row when a long introduction or read-only tail
+  would otherwise hide part of it at an endpoint. For oversized rows, keep the
+  focused control visible; oversized cards retain a stable visible position.
+- Check seven-card list bounds, complete option rows, presets, category tabs,
+  tall content and retained scrollbar identity with both InputManager variants.
 
 ## 1.2.2 — Confirm without release prerequisites
 
