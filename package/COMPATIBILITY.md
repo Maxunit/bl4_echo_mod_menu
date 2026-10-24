@@ -42,8 +42,9 @@ A malformed provider falls back for that mod; it does not authorize native work.
 
 ## Validation boundary
 
-The functional baseline passed in-game installation/autostart, editable options,
+The 1.2.4 functional baseline passed in-game installation/autostart, editable options,
 keybind capture/rebinding, save-and-restart persistence, native inventory/pause
-menus, language switching and D-pad/Confirm/Cancel/slider use.
+menus, multilingual text rendering, language switching, D-pad/Confirm/Cancel,
+slider editing and bottom-to-top navigation through the camera presets.
 Screen formats and controller hardware beyond the tested setup are
 not implied by the offline DOM fixtures.

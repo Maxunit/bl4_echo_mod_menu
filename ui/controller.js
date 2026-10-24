@@ -23,6 +23,7 @@ function echoControllerState(manager) {
     return state;
 }
 function echoControllerContext(state) {
+    if (state.languageMenu) return function () { echoLanguageClose(state,true); };
     if (state.keyCapture) return function () {
         state.keyCapture.close('native_cancel');
         if (document.activeElement && document.activeElement.echoTextOwner === state) document.activeElement.blur();
@@ -61,6 +62,7 @@ function echoControllerOptionButton(state, parent, mod, option, role, text, fn, 
 function echoControllerTargets(state, region) {
     if (state.busy || !state.active || !state.visible || state.closed) return [];
     return state.controller.targets.filter(function (target) {
+        if (state.languageMenu && target.region !== 'language-list') return false;
         if (region && target.region !== region || target.node.disabled ||
             !echoControllerContains(state.root, target.node)) return false;
         for (var at = target.node; at && at !== state.root; at = at.parentElement)
@@ -141,7 +143,7 @@ function echoControllerMarker(node, mode, row) {
 }
 function echoControllerPaint(state) {
     var nav = state.controller, current = nav.directional && state.visible && !state.closed && echoControllerCurrent(state);
-    var mode = nav.edit || state.keyCapture || state.nativeTextInput ? 'edit' : 'browse', marked = [];
+    var mode = nav.edit || state.languageMenu || state.keyCapture || state.nativeTextInput ? 'edit' : 'browse', marked = [];
     if (current) {
         marked.push(current.node);
         (state.optionRows || []).forEach(function (item) {
@@ -156,6 +158,47 @@ function echoControllerPaint(state) {
     if (state.regions && state.regions.scrollHint) state.regions.scrollHint.textContent =
         echoT(state, nav.directional ? nav.edit ? 'controllerEdit' : 'controllerBrowse' : 'scrollHint');
 }
+function echoControllerScrollItem(target, content) {
+    var rowClass = target.region === 'options' ? 'echo-option-row' :
+        target.region === 'presets' ? 'echo-presets' : null;
+    if (rowClass) {
+        for (var node = target.node; node && node !== content; node = node.parentElement)
+            if (node.classList && node.classList.contains(rowClass)) return node;
+    }
+    return target.node;
+}
+function echoControllerScrollDestination(state, target, content, view, position, range) {
+    var box = target.node.getBoundingClientRect(), viewport = view.getBoundingClientRect();
+    var height = view.clientHeight || viewport.height, extent = box;
+    if (!height || !box.height) return position;
+    // Option controls and preset buttons share larger labeled rows. Reveal
+    // the complete row when it fits; otherwise keep the actual input visible.
+    var item = echoControllerScrollItem(target, content);
+    if (item !== target.node) {
+        var row = item.getBoundingClientRect();
+        if (row.height > 0 && row.height <= height && row.top <= box.top + 1 &&
+            row.top + row.height >= box.top + box.height - 1) extent = row;
+    }
+    var top = extent.top, bottom = top + extent.height, limit = viewport.top + height;
+    // An oversized control already covering the viewport cannot fit at both
+    // edges. Retain its position instead of alternating between alignments.
+    var delta = top <= viewport.top && bottom >= limit ? 0 :
+        top < viewport.top ? top - viewport.top : bottom > limit ? bottom - limit : 0;
+    var destination = position + delta;
+    var entries = echoControllerTargets(state).filter(function (entry) { return echoControllerContains(content, entry.node); });
+    function sameItem(entry) {
+        return entry && echoControllerScrollItem(entry, content) === item;
+    }
+    // Include leading/trailing spacing at the ends. All controls within an
+    // option or preset row count as one item, regardless of the focused button.
+    var edge = sameItem(entries[0]) ? 0 : sameItem(entries[entries.length - 1]) ? range : null;
+    if (edge !== null && extent.height <= height) {
+        // Long headings or read-only tails can make an exact endpoint hide
+        // the selected row. Move as far as its full visible extent allows.
+        destination = Math.max(position + bottom - limit, Math.min(position + top - viewport.top, edge));
+    }
+    return Math.max(0, Math.min(range, destination));
+}
 function echoControllerEnsureVisible(state) {
     var nav = state.controller, target = nav && echoControllerCurrent(state);
     if (!target || !nav.directional || nav.scrolling) return;
@@ -163,18 +206,15 @@ function echoControllerEnsureVisible(state) {
     try {
         (state.scrollPanes || []).forEach(function (pane) {
             if (!echoControllerContains(pane.content, target.node) || pane.frame.style.display === 'none') return;
-            var box = target.node.getBoundingClientRect(), viewport = pane.view.getBoundingClientRect();
-            var height = viewport.height, top = box.top, bottom = top + box.height;
-            if (!height || !box.height) return;
-            var delta = top < viewport.top ? top - viewport.top : bottom > viewport.top + height ? bottom - viewport.top - height : 0;
-            if (delta) echoScrollTo(pane, echoScrollPosition(pane) + delta);
+            if (!echoSyncScroll(pane, true)) return;
+            var position = echoScrollPosition(pane);
+            var destination = echoControllerScrollDestination(state, target, pane.content, pane.view, position, pane.range);
+            if (destination !== position) echoScrollTo(pane, destination);
         });
         var tabs = state.regions && state.regions.categories;
         if (tabs && echoControllerContains(tabs, target.node) && tabs.scrollHeight > tabs.clientHeight) {
-            var nodeBox = target.node.getBoundingClientRect(), tabBox = tabs.getBoundingClientRect();
-            if (nodeBox.top < tabBox.top) tabs.scrollTop += nodeBox.top - tabBox.top;
-            else if (nodeBox.top + nodeBox.height > tabBox.top + tabBox.height)
-                tabs.scrollTop += nodeBox.top + nodeBox.height - tabBox.top - tabBox.height;
+            tabs.scrollTop = echoControllerScrollDestination(state, target, tabs, tabs,
+                tabs.scrollTop || 0, tabs.scrollHeight - tabs.clientHeight);
         }
     } finally { nav.scrolling = false; }
 }
@@ -232,6 +272,13 @@ function echoControllerRefresh(state) {
 function echoControllerMove(state, direction) {
     var nav = state.controller;
     if (state.busy || state.keyCapture || state.nativeTextInput) return;
+    if (state.languageMenu) {
+        if (direction !== 'up' && direction !== 'down') return;
+        var languages = echoControllerTargets(state,'language-list'), focused = echoControllerCurrent(state);
+        var at = languages.indexOf(focused), step = direction === 'up' ? -1 : 1;
+        echoControllerFocus(state,languages[Math.max(0,Math.min(languages.length - 1,at + step))]);
+        return;
+    }
     if (nav.edit) {
         if (direction === 'left' || direction === 'right') nav.edit.editor.step(direction === 'left' ? -1 : 1);
         echoControllerPaint(state); return;
@@ -313,14 +360,32 @@ function echoControllerSelect(state, node) {
     echoControllerPaint(state);
     echoControllerLog(state, 'select', {target:target.id, kind:target.kind || 'button'});
 }
+function echoControllerConfirm(state, node, route) {
+    if (!node) return;
+    var nav = state.controller;
+    // Match the native InputManager: each PRESSED callback is a selection.
+    // Do not hold a latch until RELEASED or require a mouse down/up sequence;
+    // those optional phases may never reach this view on a given input route.
+    // Only reject a known native synthetic mouse event or synchronous reentry.
+    if (route === 'click' && typeof InputMgr !== 'undefined' && InputMgr.SimulatingMouse) {
+        echoControllerLog(state, 'confirm_synthetic', {}); return;
+    }
+    if (nav.confirmDispatching) { echoControllerLog(state, 'confirm_reentrant', {}); return; }
+    nav.confirmDispatching = true;
+    nav.confirmRoute = route; // last source for diagnostics, never an input gate
+    echoControllerLog(state, 'confirm_' + route, {target:node.echoControllerTarget && node.echoControllerTarget.id});
+    try { return echoControllerSelect(state, node); }
+    finally { nav.confirmDispatching = false; }
+}
 function echoControllerPointerAllowed(state) {
     return !(state.controller && state.controller.available && typeof InputMgr !== 'undefined' &&
         echoControllerState(InputMgr) === state && InputMgr.ShouldBlockCursorInput());
 }
-function echoControllerSuspend(state) {
+function echoControllerSuspend(state, preserveLanguage) {
     if (!state.controller) return;
+    if (!preserveLanguage) echoLanguageClose(state,false);
     echoControllerEndEdit(state, true);
-    state.controller.directional = false; state.controller.confirmHeld = false; state.controller.confirmRoute = '';
+    state.controller.directional = false; state.controller.confirmRoute = '';
     echoControllerPaint(state);
 }
 function echoControllerRestoreInput(state) {
@@ -333,7 +398,7 @@ function echoControllerRestoreInput(state) {
     // real Activate boundary, through the original native registration path.
     // This preserves the native priority stack and never edits the model.
     widget.UpdateInputRegistration();
-    state.controller.confirmHeld = false; state.controller.confirmRoute = '';
+    state.controller.confirmRoute = '';
     echoControllerLog(state, 'input_registration', {input_active:!!widget.inputActive});
 }
 var echoControllerClickInstalled = false;
@@ -343,6 +408,7 @@ function echoControllerInstallClick() {
     ['mousedown','mouseup','click'].forEach(function (type) {
         document.addEventListener(type, function (event) {
             if (typeof InputMgr === 'undefined') return;
+            if (event.target && event.target.isConnected === false) return;
             var state = echoControllerState(InputMgr);
             if (!state || !state.controller.directional || InputMgr.IsUsingCursor() ||
                 typeof InputMgr.IsUsingGamepad !== 'function' || !InputMgr.IsUsingGamepad() ||
@@ -353,15 +419,8 @@ function echoControllerInstallClick() {
             if (event.preventDefault) event.preventDefault();
             if (event.stopImmediatePropagation) event.stopImmediatePropagation(); else event.stopPropagation();
             if (type !== 'click' || state.busy || !state.active) return;
-            var nav = state.controller;
-            // Choose the first delivered Confirm route in this directional
-            // input sequence. When both routes arrive, only one may activate.
-            // A subsequent direction, cursor handoff or activation resets it.
-            if (nav.confirmRoute === 'action') return;
             var target = echoControllerCurrent(state); if (!target) return;
-            nav.confirmRoute = 'click';
-            echoControllerLog(state, 'confirm_click', {target:target.id});
-            echoControllerSelect(state, target.node);
+            echoControllerConfirm(state, target.node, 'click');
         }, true);
     });
 }
@@ -395,12 +454,10 @@ function echoControllerInstall(state) {
     prototype.Event_Input_Select = function () {
         var current = echoControllerState(this);
         if (!current || this.IsUsingCursor()) return inputSelect.apply(this, arguments);
-        if (current.controller.confirmRoute === 'click') return;
-        current.controller.confirmRoute = 'action';
         // The semantic focus survives a redraw even if the native DOM cache
         // still points at a detached node or was cleared by the host.
         var target = echoControllerCurrent(current) || echoControllerDefault(current);
-        if (target) return echoControllerSelect(current, target.node);
+        if (target) return echoControllerConfirm(current, target.node, 'action');
     };
     var select = prototype.SelectElement;
     prototype.SelectElement = function (node) {
@@ -413,7 +470,7 @@ function echoControllerInstall(state) {
         }
         // Own ECHO targets have no native model indices. Route once directly;
         // the original would emit InputSelectionChanged AND synthesize a click.
-        if (!this.IsUsingCursor()) return echoControllerSelect(current, node);
+        if (!this.IsUsingCursor()) return echoControllerConfirm(current, node, 'select');
     };
     var defaultFocus = prototype.FocusDefaultElement;
     prototype.FocusDefaultElement = function () {
@@ -421,28 +478,11 @@ function echoControllerInstall(state) {
         if (!current) return defaultFocus.apply(this, arguments);
         return !this.IsUsingCursor() && echoControllerFocus(current, echoControllerDefault(current));
     };
-    var action = prototype.OnInputAction;
-    prototype.OnInputAction = function (name, type) {
-        var current = echoControllerState(this);
-        if (current && type == InputActionType.PRESSED &&
-            [INPUT_NAV_UP,INPUT_NAV_RIGHT,INPUT_NAV_DOWN,INPUT_NAV_LEFT].indexOf(name) >= 0) {
-            current.controller.confirmRoute = ''; current.controller.confirmHeld = false;
-        }
-        if (current && name === INPUT_NAV_SELECTED) {
-            if (type == InputActionType.PRESSED && (current.controller.confirmHeld || current.controller.confirmRoute === 'click')) return;
-            if (type == InputActionType.PRESSED) {
-                current.controller.confirmHeld = true; current.controller.confirmRoute = 'action';
-                echoControllerLog(current, 'confirm_action', {target:current.controller.current});
-            }
-            if (type == InputActionType.RELEASED) current.controller.confirmHeld = false;
-        }
-        return action.apply(this, arguments);
-    };
     var cursor = prototype.ResetCursorInput;
     prototype.ResetCursorInput = function () {
         var result = cursor.apply(this, arguments), current = echoControllerState(this);
         if (current && this.IsUsingCursor() && current.controller.directional) {
-            echoControllerSuspend(current); echoControllerLog(current, 'cursor', {});
+            echoControllerSuspend(current,true); echoControllerLog(current, 'cursor', {});
         }
         return result;
     };
@@ -451,7 +491,7 @@ function echoControllerMount(state) {
     if (state.controller) { echoControllerInstall(state); return; }
     var widget = state.widget, originalEscape = widget.Event_TriggerCohEscapeInput;
     state.controller = {available:false, capabilityIssue:'', escapeCapable:typeof originalEscape === 'function', escapeRegistered:false,
-        directional:false, current:'', region:'mods', targets:[], memory:{}, categories:{}, edit:null, confirmHeld:false, confirmRoute:'', records:0, counts:{}};
+        directional:false, current:'', region:'mods', targets:[], memory:{}, categories:{}, edit:null, confirmDispatching:false, confirmRoute:'', records:0, counts:{}};
     if (typeof originalEscape === 'function') widget.Event_TriggerCohEscapeInput = function (ident) {
         var cancel = echoControllerContext(state);
         if (ident === echoControllerEscape && state.visible && !state.closed && state.widget.IsActivated && cancel) {

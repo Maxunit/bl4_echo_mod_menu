@@ -1,5 +1,14 @@
 # Third-party material
 
+The menu's six TrueType font subsets derive from Noto Sans, JP, KR, SC, TC and
+Thai, distributed under the SIL Open Font License 1.1. The modified font families
+are named `ECHO Menu Font ...`. Upstream copyright/license
+notices are retained in `licenses/fonts/`. `ui/fonts/manifest.json` records the
+exact Fontsource repository commit, input blob identities and subset checksums.
+These subsets cover the bundled ECHO translations and language names, with
+additional Latin/Cyrillic characters. They are not complete Unicode fonts.
+Source: https://github.com/fontsource/font-files
+
 The `tests/fixtures/sdk_*.py.txt` files contain upstream `bl-sdk/mods_base` source
 used only by offline tests. Their GNU LGPL v3 notice and associated license texts
 are retained under `tests/fixtures/`. The factory fixture includes its exact

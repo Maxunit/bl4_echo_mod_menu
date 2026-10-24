@@ -11,6 +11,7 @@ from .transactions import Mailbox, Rejected
 from .config import BUILD_TOKEN, VERSION
 from ..metadata import distribution_info
 from ..paths import report_directory
+from ..localization import valid_preference
 
 SERVICE = 'echo-mod-menu-v1'
 PREFIX = '/' + SERVICE
@@ -42,7 +43,7 @@ class MenuService:
         self.preferences_path = root / 'preferences.json'
         try:
             prefs = json.loads(self.preferences_path.read_text(encoding='utf-8'))
-            if prefs.get('language') in ('auto', 'de', 'en'):
+            if valid_preference(prefs.get('language')):
                 self.preferences['language'] = prefs['language']
         except (OSError, ValueError, AttributeError):
             pass
@@ -129,7 +130,7 @@ class MenuService:
     def receive_preferences(self, body):
         if not isinstance(body, dict) or body.get('token') != BUILD_TOKEN:
             return 403, {'ok': False, 'service': SERVICE}
-        if body.get('language') not in ('auto', 'de', 'en'):
+        if not valid_preference(body.get('language')):
             return 400, {'ok': False, 'service': SERVICE}
         with self.lock:
             self.preferences = {'language': body['language']}

@@ -1,5 +1,82 @@
 # Changelog
 
+## 1.2.4 — restore the complete preset row
+
+- Expand the API guide with a level-selection table and complete Level 2/3
+  examples; include their standalone source folders and optional SDKMODs.
+- Treat all preset buttons, their shared label and container padding as one
+  scroll item, including when the buttons wrap onto multiple lines.
+- Returning from the last option to any remembered preset reveals the complete
+  preset row and reaches the scroll start when the leading section fits.
+- Reuse the same logical-row lookup for regular option controls and preserve
+  focused-button visibility when an unusually tall preset row cannot fit.
+- Check repeated bottom-to-top D-pad round trips for all three presets, wrapped
+  and oversized rows, horizontal navigation and unchanged drafts/native models.
+
+## 1.2.3 — complete D-pad scroll bounds
+
+- Reveal the whole labeled option row when it fits in the viewport, including
+  rows with separate Minus / Slider / Plus controls.
+- Reach the actual scroll start/end at the first/last selectable item, including
+  list padding, card margins and section spacing.
+- Apply the same endpoint behavior to the language list and wrapped category
+  tabs, using one shared scroll calculation.
+- Preserve the full selected row when a long introduction or read-only tail
+  would otherwise hide part of it at an endpoint. For oversized rows, keep the
+  focused control visible; oversized cards retain a stable visible position.
+- Check seven-card list bounds, complete option rows, presets, category tabs,
+  tall content and retained scrollbar identity with both InputManager variants.
+
+## 1.2.2 — Confirm without release prerequisites
+
+- Leave the original InputManager action dispatcher unchanged and handle each
+  native Confirm press independently, without waiting for a release event.
+- Accept repeated click-only Confirm delivery without requiring mouse down/up,
+  a direction change, a focus change or a matching logical action.
+- Replace persistent route/held-input gates with a synchronous reentry guard
+  and the native flag for deliberately simulated mouse clicks.
+- Compare Press-only behavior against both original InputManager variants and
+  cover repeated slider edits, language selection, mixed routes and exceptions.
+- Retain 1.2.1's explicit font assignment and all fourteen translations.
+
+## 1.2.1 — font assignment and repeated Confirm
+
+- Apply concrete font stacks directly to menu text, controls and retained
+  regions instead of relying on inherited font families in the native view.
+- Keep each language name's regional font when switching the menu language.
+- Rearm controller Confirm on each new press or primary mouse-button cycle,
+  including repeated activation of the same control after a redraw.
+- Continue suppressing held input and trailing synthetic clicks so a single
+  gesture cannot toggle an option or enter an editor twice.
+- Check font assignment throughout all 14 locales and repeated mixed Confirm
+  routes, including reopening the language selector without moving focus.
+
+## 1.2.0 — complete menu translations
+
+- Translate all 88 ECHO menu strings into the 14 selectable text languages.
+- Keep regional Spanish and Chinese translations in separate locale files.
+- Validate complete dictionaries and unchanged format arguments at build time.
+- Expand bundled fonts to cover every translated ECHO string and language name.
+- Inherit the selected font stack throughout the menu, with regional script
+  fallbacks and spacing for Asian text. Preserve mod-owned translation fallback.
+- Exercise all 14 selections without changing staged SDK values.
+
+## 1.1.1 — selector font fix
+
+- Bundle small, renamed Noto subsets for Japanese, Korean, Simplified Chinese,
+  Traditional Chinese and Thai language names, with upstream OFL notices.
+- Load the exact TrueType resources through local Cohtml font-face rules.
+- Keep font registration across dropdown redraws and widget recreation.
+- Check glyph coverage, font hashes and the packaged resource paths offline.
+
+## 1.1.0 — language dropdown test
+
+- Auto plus a scrollable language dropdown with 14 native language names.
+- D-pad focus stays within the open list; Confirm applies and Cancel dismisses.
+- Mouse, virtual gamepad cursor and keyboard input use the same selection.
+- Regional locale mapping, saved preference reload and mod-text fallback.
+- ECHO's own text remains English/German, with English fallback for other locales.
+
 ## 1.0.0
 
 - Native Mods tab with a blank animated scene and native material transition.

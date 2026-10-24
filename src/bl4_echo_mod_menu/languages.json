@@ -1,0 +1,16 @@
+[
+  {"code":"en","name":"English","aliases":["en-us","en-gb"]},
+  {"code":"fr","name":"Français","aliases":["fr-fr"]},
+  {"code":"it","name":"Italiano","aliases":["it-it"]},
+  {"code":"de","name":"Deutsch","aliases":["de-de"]},
+  {"code":"es-es","name":"Español (España)","aliases":["es"]},
+  {"code":"ja","name":"日本語","aliases":["ja-jp"]},
+  {"code":"ko","name":"한국어","aliases":["ko-kr"]},
+  {"code":"pt-br","name":"Português (Brasil)","aliases":["pt"]},
+  {"code":"ru","name":"Русский","aliases":["ru-ru"]},
+  {"code":"zh-hans","name":"简体中文","aliases":["zh-cn","zh-sg","zh"]},
+  {"code":"th","name":"ไทย","aliases":["th-th"]},
+  {"code":"zh-hant","name":"繁體中文","aliases":["zh-tw","zh-hk","zh-mo"]},
+  {"code":"pl","name":"Polski","aliases":["pl-pl"]},
+  {"code":"es-419","name":"Español (Latinoamérica)","aliases":["es-mx","es-ar","es-cl","es-co","es-la","es-us"]}
+]

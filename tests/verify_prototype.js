@@ -2,11 +2,17 @@
 const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('assert');
 const environment=require('./frontend_test_env')();
 const {Node,ctx,doc,pending,records,events,documentEvents,nativeEvents,windowListeners,observers,removedNodes,captureFocusPolicy,dispatchElementFocus}=environment;
-const dictionary=JSON.parse(fs.readFileSync(path.join(__dirname,'../ui/i18n.json'),'utf8'));
+const dictionary=require('./frontend_sources').translations;
 assert.deepStrictEqual(Object.keys(dictionary.en).sort(),Object.keys(dictionary.de).sort());
 let source=fs.readFileSync(path.join(__dirname,'../ui/editor.js'),'utf8').replace('__ECHO_TRANSLATIONS__',JSON.stringify(dictionary));
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../ui/controller.js'),'utf8'),ctx);
+vm.runInContext(require('./frontend_sources').languageScript,ctx);
 vm.runInContext(source,ctx);
+function chooseLanguage(state,code){
+ state.root.querySelector('.echo-language-trigger').click();
+ const item=state.root.querySelectorAll('.echo-language-option').find(n=>n.getAttribute('lang')===code);
+ assert(item,'Missing language '+code);item.click();
+}
 // Execute the exported original WidgetBase helper, including its real event name
 // and ActiveTextInputs aggregation. Do not replace it with a permissive focus stub.
 vm.runInContext('class GbxCustomElement {}\n'+fs.readFileSync(path.join(__dirname,'fixtures/widget_class.js'),'utf8')+'\nthis.NativeWidgetBase=WidgetBase;',ctx);
@@ -54,7 +60,7 @@ reply(pending.shift(),{});
 const persistentPanes=state.scrollPanes.slice();
 const persistentNodes=persistentPanes.flatMap(p=>[p.frame,p.view,p.content,p.rail,p.track,p.thumb]);
 const persistentCards=[state.modCards.m1,state.modCards.sdk];
-assert.strictEqual(observers.length,2);
+assert.strictEqual(observers.filter(o=>!o.disconnected).length,2);
 assert(observers.every(o=>o.targets.length===3));
 assert.strictEqual(state.layoutMode,'batch_immediate_layout');
 assert(state.scrollPanes.every(p=>!p.awaitLayout&&p.rail.style.opacity==='1'));
@@ -108,7 +114,7 @@ button('Kategorie zurücksetzen').click();assert.strictEqual(state.drafts['value
 // Native tab deactivate retains draft/queued values and cancels active drag.
 const before=JSON.stringify(state.drafts);widget.IsActivated=false;ctx.echoOnEditorLifecycle(widget,'Event_Deactivate');
 widget.IsActivated=true;ctx.echoOnEditorLifecycle(widget,'Event_Activate');reply(pending.shift(),{pending:request.body.commands,queue_revision:1});assert.strictEqual(JSON.stringify(state.drafts),before);
-button('EN').click();request=pending.shift();assert(request.url.endsWith('/preferences'));reply(request,{preferences:{language:'en'}});
+chooseLanguage(state,'en');request=pending.shift();assert(request.url.endsWith('/preferences'));reply(request,{preferences:{language:'en'}});
 assert(state.root.textContent.includes('Save & Apply'));assert.strictEqual(ctx.echoLanguage(state),'en');
 button('Discard all changes').click();request=pending.shift();assert.deepStrictEqual(request.body.commands,[]);reply(request,{pending:[],queue_revision:2});assert.strictEqual(Object.keys(state.drafts).length,0);
 // Slider is event-driven, not a timer, and stops at tab exit.
@@ -139,7 +145,7 @@ assert(tabs[0].style.cssText.includes('background-color:transparent'));
 tabs[0].listeners.mouseenter();tabs[0].listeners.mouseleave();assert.strictEqual(tabs[0].style.backgroundColor,'transparent');
 assert(tabs[0].style.backgroundImage.includes('linear-gradient'));
 assert(!tabs[0].querySelector('.echo-button-corner'));
-assert(state.root.querySelector('.echo-section').textContent.includes('2 options'));
+assert(state.root.querySelector('.echo-section').textContent.includes('Options: 2'));
 assert(state.root.querySelector('.echo-body').style.cssText.includes('bottom:9.5rem'));
 // Wheel, thumb, page clicks and buttons act on the same bounded viewport, without timers.
 let pane=state.scrollPanes.find(p=>p.key.startsWith('options:'));
@@ -167,7 +173,7 @@ assert.deepStrictEqual(state.scrollPanes,persistentPanes);
 assert(persistentNodes.every(n=>!removedNodes.includes(n)));
 assert.deepStrictEqual([state.modCards.m1,state.modCards.sdk],persistentCards);
 assert(persistentCards.every(n=>!removedNodes.includes(n)));
-assert.strictEqual(observers.length,2);
+assert.strictEqual(observers.filter(o=>!o.disconnected).length,2);
 // No immediate-layout API: ResizeObserver resolves geometry after the renderer has settled,
 // with no mouseenter/mousemove event, and without replacing the previous visible handle.
 const flush=ctx.engine.executeImmediateLayoutSync;
@@ -203,7 +209,7 @@ const callsBeforeResize=environment.variables.layoutCalls;events.resize();assert
 assert(!pane.awaitLayout);
 // Switching mod while the pointer remains stationary does not allocate a new rail or card.
 for(let i=0;i<30;i++) {state.selected=i%2?'m1':'sdk';ctx.echoDraw(state);}
-assert.deepStrictEqual(state.scrollPanes,persistentPanes);assert.strictEqual(observers.length,2);
+assert.deepStrictEqual(state.scrollPanes,persistentPanes);assert.strictEqual(observers.filter(o=>!o.disconnected).length,2);
 assert(persistentNodes.every(n=>!removedNodes.includes(n)));
 assert(persistentCards.every(n=>!removedNodes.includes(n)));
 // Empty filters hide the right content without destroying its scrollbar; clearing the
@@ -212,9 +218,9 @@ state.filter='off';ctx.echoDraw(state);
 assert.strictEqual(state.selected,null);assert.strictEqual(pane.frame.style.display,'none');
 state.filter='all';ctx.echoDraw(state);
 assert.strictEqual(pane.frame.style.display,'flex');
-assert.deepStrictEqual(state.scrollPanes,persistentPanes);assert.strictEqual(observers.length,2);
+assert.deepStrictEqual(state.scrollPanes,persistentPanes);assert.strictEqual(observers.filter(o=>!o.disconnected).length,2);
 assert(persistentNodes.every(n=>!removedNodes.includes(n)));
-ctx.LanguageSettings.CurrentLangCode='fr';state.preference='auto';assert.strictEqual(ctx.echoLanguage(state),'en');
+ctx.LanguageSettings.CurrentLangCode='fr';state.preference='auto';assert.strictEqual(ctx.echoLanguage(state),'fr');assert.strictEqual(ctx.echoT(state,'save'),dictionary.fr.save);
 // Input regression: emulate Cohtml events without .key, actual focus/blur and
 // value setters that move the caret. Enter is field confirmation, never /stage.
 const inputWidget=new Node('widget-list-menu');inputWidget.WidgetIdent='def_bl4_empty_page_v40';inputWidget.IsActivated=true;
@@ -420,7 +426,7 @@ assert.strictEqual(keyRequest.body.commands.length,1);assert.strictEqual(keyRequ
 reply(keyRequest,{catalog:keyCatalog,pending:keyRequest.body.commands,queue_revision:1,preferences:{language:'de'}});
 assert.strictEqual(ctx.echoDirty(keyState),0);assert.strictEqual(keyState.saved[toggleKey].value,null);
 assert.strictEqual(keyState.root.querySelectorAll('.echo-keybind-value')[1].value,'');
-kbButton('EN').click();reply(pending.shift(),{catalog:keyCatalog,pending:keyRequest.body.commands,queue_revision:1,preferences:{language:'en'}});
+chooseLanguage(keyState,'en');reply(pending.shift(),{catalog:keyCatalog,pending:keyRequest.body.commands,queue_revision:1,preferences:{language:'en'}});
 assert.strictEqual(keyState.root.querySelector('.echo-keybind-value').placeholder,'Unbound');assert(kbButton('Unbind'));
 console.log('PASS: editable registered key names/null, readonly fallback, same-field Enter, Escape, validation, unbind, defaults, discard, detached-field isolation, stage payload and DE/EN.');
 // Decoder covers current Cohtml legacy events and modern logical keys. OEM
@@ -623,6 +629,17 @@ apiState.preference='en';ctx.echoDraw(apiState);
 assert(apiState.root.textContent.includes('Range'));assert(apiState.root.textContent.includes('Soft'));
 assert.strictEqual(JSON.stringify(apiState.drafts),apiDrafts);
 assert.strictEqual(apiState.category,'panel');assert(Object.isFrozen(apiWidget.DataModel));
+const displayedApiMod=apiState.catalog.mods[0];
+displayedApiMod.integration_notice='Legacy manager notice';displayedApiMod.integration_notice_key='integrationFallback';
+for(const code of Object.keys(dictionary)){
+ apiState.preference=code;ctx.echoDraw(apiState);
+ assert.strictEqual(apiState.root.querySelector('.echo-integration-notice').textContent,dictionary[code].integrationFallback);
+ assert.strictEqual(JSON.stringify(apiState.drafts),apiDrafts);
+}
+delete displayedApiMod.integration_notice_key;displayedApiMod.integration_notice_i18n={fr:'Explication de l’auteur',en:'Author explanation'};
+apiState.preference='fr';ctx.echoDraw(apiState);
+assert.strictEqual(apiState.root.querySelector('.echo-integration-notice').textContent,'Explication de l’auteur');
+delete displayedApiMod.integration_notice;delete displayedApiMod.integration_notice_i18n;apiState.preference='en';ctx.echoDraw(apiState);
 console.log('PASS: provider label/description/category/choice localization and English fallback, conditional visibility, mixed boolean/choice/numeric preset, draft-preserving language change, unchanged native model.');
 // Use the actual exported native Activate/Deactivate/HideFlags implementations.
 const inventory=nativeHost(new Node('widget-inventory'),'def_menu_inventory');

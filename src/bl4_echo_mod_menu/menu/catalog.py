@@ -209,7 +209,7 @@ class Registry:
                     if key[0] == locals().get('mid'):
                         del options[key]
         self.mods, self.options, self.providers = mods, options, profiles
-        self.snapshot = {'version': '1.0.0', 'captured_utc': datetime.now(timezone.utc).isoformat(),
+        self.snapshot = {'version': '1.2.4', 'captured_utc': datetime.now(timezone.utc).isoformat(),
                          'mods': rows, 'errors': errors[:32], 'status': 'read',
                          'capabilities': {'mod_metadata': True, 'option_values_read_only': False,
                                           'mod_state_writes': True, 'option_writes': True,

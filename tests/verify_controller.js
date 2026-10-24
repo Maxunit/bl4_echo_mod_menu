@@ -15,11 +15,12 @@ function fixture(managerFile) {
  ctx.OakUtils={SetupHintBarParams:ident=>({ident}),SetupHintEntry:(action,text)=>({action,text})};
  vm.runInContext(source('fixtures/native_input/'+managerFile)+'\nthis.NativeInputManager=InputManager;',ctx);
  ctx.InputMgr=new ctx.NativeInputManager();
+ const nativeAction=ctx.NativeInputManager.prototype.OnInputAction;
  vm.runInContext(source('fixtures/native_input/input_behaviors.js'),ctx);
  vm.runInContext('class GbxCustomElement extends DomNode { constructor(){super("widget-list-menu");} Init(){} connectedCallback(){} }\n'+source('fixtures/native_input/widget_class_patch2.js')+'\nthis.NativeWidgetBase=WidgetBase;',ctx);
  vm.runInContext(source('fixtures/native_input/menu_base.js')+'\n'+source('fixtures/native_input/oak_menu_base.js')+'\nthis.NativeOakMenuBase=Widget_OakMenuBase;',ctx);
  vm.runInContext(source('fixtures/native_input/list_menu.js')+'\nthis.NativeListMenu=Widget_ListMenu;',ctx);
- vm.runInContext(source('../ui/controller.js')+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',source('../ui/i18n.json')),ctx);
+ vm.runInContext(source('../ui/controller.js')+'\n'+require('./frontend_sources').languageScript+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',require('./frontend_sources').translationsText),ctx);
  ctx.InputMgr.Init();ctx.InputMgr.SimulateMouse=true;ctx.InputMgr.OnInputDeviceChanged(0,1,2,0);
  const actions=vm.runInContext('({up:INPUT_NAV_UP,down:INPUT_NAV_DOWN,left:INPUT_NAV_LEFT,right:INPUT_NAV_RIGHT,select:INPUT_NAV_SELECTED,pressed:InputActionType.PRESSED,released:InputActionType.RELEASED})',ctx);
  const trigger=ctx.engine.trigger;
@@ -70,6 +71,8 @@ function fixture(managerFile) {
  assert.strictEqual(state.controller.available,true);
  function phase(name,type){globalActions.Input_OnAction(actions[name],actions[type]);}
  function tap(name){phase(name,'pressed');phase(name,'released');}
+ function pointerConfirm(){for(const name of ['mousedown','mouseup','click'])doc.body.fire(name,{button:0});}
+ function clickConfirm(){doc.body.fire('click',{button:0});}
  function emitWidget(name){const handler=widgetEvents.get(widget.MakeEventName(name));assert(handler,'Missing native callback '+name);handler();}
  function target(id){return state.controller.targets.find(item=>item.id===id);}
  function focus(id){const node=target(id);assert(node,'Missing focus target '+id);ctx.InputMgr.OnNavigationTypeChanged(false);assert(ctx.echoControllerFocus(state,node));return node;}
@@ -77,13 +80,40 @@ function fixture(managerFile) {
   const current=ctx.InputMgr.CurrWidget,stack=current&&escapeStacks.get(current.WidgetIdent);
   if(stack&&stack.length)current.Event_TriggerCohEscapeInput(stack.at(-1));else rootBack++;
  }
- return {env,ctx,doc,Node,pending,nativeEvents,records,widget,state,mods,actions,phase,tap,target,focus,cancel,
+ return {env,ctx,doc,Node,pending,nativeEvents,records,widget,state,mods,actions,nativeAction,phase,tap,pointerConfirm,clickConfirm,target,focus,cancel,
   escapeStacks,host,reply,modelBefore,emitWidget,get rootBack(){return rootBack;}};
+}
+function scrollGeometry(h,pane,total,height,top=20){
+ pane.pendingTop=null;pane.awaitLayout=false;pane.view.scrollTop=0;
+ pane.view._clientHeight=height;pane.view._scrollHeight=total;
+ pane.view._rect={left:0,top,width:400,height};pane.track._clientHeight=200;
+ h.ctx.echoSyncScroll(pane,true);
+}
+function scrollingBox(node,pane,offset,height){
+ node.getBoundingClientRect=()=>{
+  const top=pane.view.getBoundingClientRect().top+offset-(pane.view.scrollTop||0);
+  return {left:0,right:380,width:380,top,bottom:top+height,height};
+ };
 }
 let cases=0;
 for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  const f=fixture(managerFile),{ctx,state,widget,tap,focus,target,phase,nativeEvents,pending}=f;
  const key='value:mod1:offset';
+ // The original contract selects on EVERY PRESSED event, with no RELEASED
+ // prerequisite. Compare it directly, rather than inventing a held-key gate.
+ const nativeOnly=new ctx.NativeInputManager();let nativeSelections=0;
+ nativeOnly.Event_Input_Select=()=>nativeSelections++;
+ for(let i=0;i<3;i++)f.nativeAction.call(nativeOnly,f.actions.select,f.actions.pressed);
+ assert.strictEqual(nativeSelections,3);
+ const pulses=fixture(managerFile);pulses.tap('down');pulses.focus('toggle:value:mod1:toggle');
+ const selectedAtStart=pulses.state.controller.counts.select||0;
+ for(let i=0;i<3;i++)pulses.phase('select','pressed');
+ assert.strictEqual(pulses.state.controller.counts.select-selectedAtStart,nativeSelections);
+ assert.strictEqual(ctx.NativeInputManager.prototype.OnInputAction,f.nativeAction);
+ assert.strictEqual(pulses.state.controller.confirmDispatching,false);
+ pulses.phase('select','released');
+ assert.strictEqual(pulses.state.controller.counts.select-selectedAtStart,nativeSelections);
+ cases++;
  // The first native direction establishes focus; the next moves through the
  // graph. No hidden original list entry or native model selection is used.
  tap('down');assert.strictEqual(state.controller.current,'mod:mod1');
@@ -106,11 +136,12 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(state.drafts.other.value,1);assert.strictEqual(JSON.stringify(state.saved),saved);
  assert.strictEqual(f.escapeStacks.get(widget.WidgetIdent).length,0);assert.strictEqual(f.rootBack,0);
  cases++;
- // Holding Confirm cannot reenter edit immediately after confirming it.
+ // Release is optional: another Press reopens the same slider immediately.
  tap('select');tap('left');assert.strictEqual(state.drafts[key].value,4);
  phase('select','pressed');assert(!state.controller.edit);
- phase('select','pressed');assert(!state.controller.edit);
+ phase('select','pressed');assert(state.controller.edit);
  phase('select','released');assert.strictEqual(state.drafts[key].value,4);
+ f.cancel();assert(!state.controller.edit);
  assert.strictEqual(f.escapeStacks.get(widget.WidgetIdent).length,0);
  cases++;
  // Native select would normally emit an indexed model selection and a
@@ -118,8 +149,10 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  focus('toggle:value:mod1:toggle');
  const selectedBefore=nativeEvents.filter(e=>/InputSelectionChanged$/.test(e[0])).length;
  phase('select','pressed');assert.strictEqual(state.drafts['value:mod1:toggle'].value,false);
+ phase('select','pressed');assert(!state.drafts['value:mod1:toggle']);
  phase('select','pressed');assert.strictEqual(state.drafts['value:mod1:toggle'].value,false);
- target('toggle:value:mod1:toggle').node.click();assert.strictEqual(state.drafts['value:mod1:toggle'].value,false);
+ ctx.InputMgr.SimulatingMouse=true;target('toggle:value:mod1:toggle').node.click();ctx.InputMgr.SimulatingMouse=false;
+ assert.strictEqual(state.drafts['value:mod1:toggle'].value,false);
  phase('select','released');
  assert.strictEqual(nativeEvents.filter(e=>/InputSelectionChanged$/.test(e[0])).length,selectedBefore);
  assert.strictEqual(JSON.stringify(widget.DataModel),f.modelBefore);
@@ -191,6 +224,159 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(JSON.stringify(widget.DataModel),f.modelBefore);
  cases++;
  console.log('PASS: native '+managerFile+' action dispatch, focus graph, slider/choice edit, contextual native Escape, text/capture cancellation, pointer handoff, one-shot Confirm, foreign widgets and unchanged models.');
+
+ // Fully visible end cards can still leave list padding/margins offscreen.
+ // D-pad reaches actual endpoints; an intermediate card scrolls minimally.
+ const ends=fixture(managerFile);
+ for(let i=0;i<5;i++)ends.state.catalog.mods.push(Object.assign({},ends.state.catalog.mods[1],{id:'scroll-'+i,name:'Scroll '+i}));
+ ends.ctx.echoDraw(ends.state);ends.tap('down');
+ const modPane=ends.state.paneCache['echo-mod-list'],modRail=modPane.rail,modThumb=modPane.thumb;
+ scrollGeometry(ends,modPane,12+7*95+12,220,40);
+ ends.ctx.echoControllerTargets(ends.state,'mods').forEach((item,index)=>scrollingBox(item.node,modPane,12+index*95,80));
+ modPane.view.scrollTop=7;ends.ctx.echoSyncScroll(modPane,true);
+ ends.focus('mod:mod1');assert.strictEqual(modPane.view.scrollTop,0);assert.strictEqual(modThumb.style.top,'0px');
+ ends.focus('mod:scroll-4');assert.strictEqual(modPane.view.scrollTop,modPane.range);
+ assert.strictEqual(modThumb.style.top,modPane.travel+'px');
+ ends.focus('mod:scroll-1');assert(modPane.view.scrollTop>0&&modPane.view.scrollTop<modPane.range);
+ const middleBox=ends.target('mod:scroll-1').node.getBoundingClientRect();
+ assert(middleBox.top>=40&&middleBox.bottom<=260);
+ assert.strictEqual(modPane.rail,modRail);assert.strictEqual(modPane.thumb,modThumb);
+ assert.strictEqual(ends.state.positions[modPane.key],modPane.view.scrollTop);cases++;
+
+ // A card larger than the viewport may already cover the complete visible
+ // area. Repeated focus then keeps its position instead of bouncing between
+ // its upper and lower edge.
+ scrollingBox(ends.target('mod:scroll-1').node,modPane,12+3*95,400);
+ modPane.view.scrollTop=350;ends.ctx.echoSyncScroll(modPane,true);
+ ends.focus('mod:scroll-1');assert.strictEqual(modPane.view.scrollTop,350);
+ ends.ctx.echoControllerEnsureVisible(ends.state);assert.strictEqual(modPane.view.scrollTop,350);cases++;
+
+ // Options are logical rows, including Minus/Slider/Plus. Reveal labels and
+ // the complete row, then include section spacing/padding at either end.
+ const rows=fixture(managerFile),rowMod=rows.state.catalog.mods[0];
+ rowMod.options=rowMod.options.filter(item=>['offset','toggle','mode'].includes(item.id));
+ rowMod.categories[0].presets=[];rows.ctx.echoDraw(rows.state);rows.tap('down');
+ const optionsPane=rows.state.paneCache['echo-settings'];
+ scrollGeometry(rows,optionsPane,60+3*110+25,220);
+ rows.state.optionRows.forEach((item,index)=>scrollingBox(item.row,optionsPane,60+index*110,100));
+ rows.ctx.echoControllerTargets(rows.state,'options').forEach(item=>{
+  const index=['offset','toggle','mode'].indexOf(item.row);
+  scrollingBox(item.node,optionsPane,60+index*110+35,32);
+ });
+ optionsPane.view.scrollTop=45;rows.ctx.echoSyncScroll(optionsPane,true);
+ rows.focus('increase:value:mod1:offset');assert.strictEqual(optionsPane.view.scrollTop,0);
+ rows.focus('toggle:value:mod1:toggle');assert.strictEqual(optionsPane.view.scrollTop,50);
+ const rowBox=rows.state.optionRows[1].row.getBoundingClientRect();assert(rowBox.top>=20&&rowBox.bottom<=240);
+ rows.focus('value:mod1:mode');assert.strictEqual(optionsPane.view.scrollTop,optionsPane.range);
+ rows.focus('value:mod1:offset');assert.strictEqual(optionsPane.view.scrollTop,0);
+ assert.strictEqual(JSON.stringify(rows.widget.DataModel),rows.modelBefore);assert.strictEqual(rows.pending.length,0);cases++;
+
+ // Endpoint alignment must preserve the whole row too. A visible centered
+ // control alone is not enough when a heading or trailing text is very long.
+ scrollGeometry(rows,optionsPane,600,220);
+ scrollingBox(rows.state.optionRows[0].row,optionsPane,100,160);
+ rows.ctx.echoControllerTargets(rows.state,'options').filter(item=>item.row==='offset')
+  .forEach(item=>scrollingBox(item.node,optionsPane,180,32));
+ rows.focus('value:mod1:offset');assert.strictEqual(optionsPane.view.scrollTop,40);
+ rows.tap('right');assert.strictEqual(optionsPane.view.scrollTop,40);
+ const firstFullRow=rows.state.optionRows[0].row.getBoundingClientRect();
+ assert(firstFullRow.top>=20&&firstFullRow.bottom<=240);cases++;
+
+ scrollingBox(rows.state.optionRows[2].row,optionsPane,340,160);
+ scrollingBox(rows.target('value:mod1:mode').node,optionsPane,420,32);
+ rows.focus('value:mod1:mode');assert.strictEqual(optionsPane.view.scrollTop,340);
+ const lastFullRow=rows.state.optionRows[2].row.getBoundingClientRect();
+ assert(lastFullRow.top>=20&&lastFullRow.bottom<=240);
+ rows.ctx.echoControllerEnsureVisible(rows.state);assert.strictEqual(optionsPane.view.scrollTop,340);cases++;
+
+ // A preceding preset is part of the same scroll pane. Moving into its first
+ // option keeps the normal minimum scroll; returning to the preset reveals
+ // the complete leading section spacing.
+ const presets=fixture(managerFile),presetPane=presets.state.paneCache['echo-settings'];
+ scrollGeometry(presets,presetPane,500,220);
+ scrollingBox(presets.state.optionRows[0].row,presetPane,160,100);
+ presets.ctx.echoControllerTargets(presets.state,'options').filter(item=>item.row==='offset')
+  .forEach(item=>scrollingBox(item.node,presetPane,190,32));
+ scrollingBox(presets.target('preset:mod1:camera:near').node,presetPane,40,30);
+ presetPane.view.scrollTop=100;
+ presets.focus('value:mod1:offset');assert.strictEqual(presetPane.view.scrollTop,100);
+ presets.focus('preset:mod1:camera:near');assert.strictEqual(presetPane.view.scrollTop,0);cases++;
+
+ // All presets form one labeled row. Returning from the bottom remembers
+ // the selected button, which may be the second/third rather than the first
+ // DOM target. Include wrapped buttons and an oversized-row fallback.
+ for(const [remembered,groupHeight,wideTop] of [
+  ['standard',95,100],['near',95,100],['wide',95,100],['wide',150,160],['wide',380,320]
+ ]){
+  const roundtrip=fixture(managerFile),presetMod=roundtrip.state.catalog.mods[0];
+  presetMod.options=presetMod.options.filter(item=>['offset','toggle','mode'].includes(item.id));
+  presetMod.categories[0].presets=[
+   {id:'standard',label:'Standard',values:{offset:3}},
+   {id:'near',label:'Near',values:{offset:4}},
+   {id:'wide',label:'Wide',values:{offset:8}}
+  ];
+  presetMod.options[0].value={standard:3,near:4,wide:8}[remembered];
+  roundtrip.ctx.echoDraw(roundtrip.state);
+  const firstOption=60+groupHeight+20,total=firstOption+3*110+35;
+  const viewport=roundtrip.state.paneCache['echo-settings'];
+  scrollGeometry(roundtrip,viewport,total,220);
+  scrollingBox(viewport.content.echoPresets,viewport,60,groupHeight);
+  for(const name of ['standard','near','wide'])
+   scrollingBox(roundtrip.target('preset:mod1:camera:'+name).node,viewport,name==='wide'?wideTop:100,32);
+  roundtrip.state.optionRows.forEach((item,index)=>scrollingBox(item.row,viewport,firstOption+index*110,100));
+  roundtrip.ctx.echoControllerTargets(roundtrip.state,'options').forEach(item=>{
+   const index=['offset','toggle','mode'].indexOf(item.row);
+   scrollingBox(item.node,viewport,firstOption+index*110+35,32);
+  });
+  const focusedPreset='preset:mod1:camera:'+remembered;
+  const drafts=JSON.stringify(roundtrip.state.drafts),saved=JSON.stringify(roundtrip.state.saved);
+  roundtrip.focus(focusedPreset);
+  for(let cycle=0;cycle<3;cycle++){
+   for(let step=0;step<3;step++)roundtrip.tap('down');
+   assert.strictEqual(roundtrip.state.controller.current,'value:mod1:mode');
+   assert.strictEqual(viewport.view.scrollTop,viewport.range);
+   for(let step=0;step<3;step++)roundtrip.tap('up');
+   assert.strictEqual(roundtrip.state.controller.current,focusedPreset);
+   const expectedTop=groupHeight<=220?0:wideTop+32-220;
+   assert.strictEqual(viewport.view.scrollTop,expectedTop);
+   const visibleBox=(groupHeight<=220?viewport.content.echoPresets:roundtrip.target(focusedPreset).node).getBoundingClientRect();
+   assert(visibleBox.top>=20&&visibleBox.bottom<=240);
+   roundtrip.ctx.echoControllerEnsureVisible(roundtrip.state);
+   assert.strictEqual(viewport.view.scrollTop,expectedTop);
+  }
+  if(groupHeight<=220){
+   roundtrip.focus('preset:mod1:camera:standard');
+   roundtrip.tap('right');roundtrip.tap('right');
+   assert.strictEqual(roundtrip.state.controller.current,'preset:mod1:camera:wide');
+   assert.strictEqual(viewport.view.scrollTop,0);
+  }
+  assert.strictEqual(JSON.stringify(roundtrip.state.drafts),drafts);
+  assert.strictEqual(JSON.stringify(roundtrip.state.saved),saved);
+  assert.strictEqual(JSON.stringify(roundtrip.widget.DataModel),roundtrip.modelBefore);
+  assert.strictEqual(roundtrip.pending.length,0);cases++;
+ }
+
+ // Wrapped categories have their own native scroll viewport. Include its
+ // outer padding at either end without selecting another category.
+ const tabs=ends.state.regions.categories,tabTargets=ends.ctx.echoControllerTargets(ends.state,'categories');
+ tabs._clientHeight=80;tabs._scrollHeight=tabTargets.length*50+12;
+ tabs._rect={left:0,top:20,width:280,height:80};tabs.scrollTop=0;
+ tabTargets.forEach((item,index)=>scrollingBox(item.node,{view:tabs},5+index*50,40));
+ ends.focus(tabTargets[tabTargets.length-1].id);assert.strictEqual(tabs.scrollTop,tabs.scrollHeight-tabs.clientHeight);
+ ends.focus(tabTargets[0].id);assert.strictEqual(tabs.scrollTop,0);
+ assert.strictEqual(ends.state.category,'camera');assert.strictEqual(ends.pending.length,0);cases++;
+
+ // A translated description or introduction may exceed the viewport. An
+ // endpoint snap must not hide the control just to expose the row's edge.
+ const tall=fixture(managerFile),tallMod=tall.state.catalog.mods[0];
+ tallMod.options=tallMod.options.filter(item=>item.id==='offset');tallMod.categories[0].presets=[];
+ tall.ctx.echoDraw(tall.state);tall.tap('down');const tallPane=tall.state.paneCache['echo-settings'];
+ scrollGeometry(tall,tallPane,60+420+30,220);
+ scrollingBox(tall.state.optionRows[0].row,tallPane,60,420);
+ tall.ctx.echoControllerTargets(tall.state,'options').forEach(item=>scrollingBox(item.node,tallPane,60+330,32));
+ tall.focus('value:mod1:offset');assert.strictEqual(tallPane.view.scrollTop,202);
+ const tallControl=tall.target('value:mod1:offset').node.getBoundingClientRect();
+ assert(tallControl.top>=20&&tallControl.bottom<=240);cases++;
 
  // A fresh field enables Save without a redraw; native data-input-disabled
  // must be reconciled before focus so Confirm activates the intended control.
@@ -345,8 +531,8 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(p.state.controller.current,'category:mod1:bindings');padClick();
  assert.strictEqual(p.state.category,'bindings');assert.strictEqual(cursorClicks,0);
  assert.strictEqual(p.state.controller.confirmRoute,'click');
- // A delayed logical copy of the same Confirm cannot activate twice.
- p.tap('select');assert.strictEqual(p.state.category,'bindings');
+ // Direct logical callbacks remain usable after pointer-only selection.
+ p.ctx.InputMgr.Event_Input_Select();assert.strictEqual(p.state.category,'bindings');
  p.tap('left');padClick();assert.strictEqual(p.state.category,'camera');
  p.tap('down');p.tap('down');assert.strictEqual(p.state.controller.current,pkey);
  padClick();assert(p.state.controller.edit);p.tap('right');
@@ -354,19 +540,46 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  padClick();assert(!p.state.controller.edit);assert.strictEqual(p.state.drafts[pkey].value,4);
  cases++;
 
- // The reverse delivery order must also be one-shot, including a redraw
- // caused by a toggle. Later clicks alone remain usable until a direction
- // starts a new route decision.
+ // Neither route needs a release or mouse down/up event. Switching between
+ // bare clicks and native pulses must work without moving semantic focus.
  const q=fixture(managerFile);q.tap('down');q.focus('toggle:value:mod1:toggle');
- q.tap('select');assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
- q.target('toggle:value:mod1:toggle').node.fire('click',{button:0});
- assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
- q.tap('up');q.tap('down');
- q.target('toggle:value:mod1:toggle').node.fire('click',{button:0});assert(!q.state.drafts['value:mod1:toggle']);
- q.tap('select');assert(!q.state.drafts['value:mod1:toggle']);
- q.target('toggle:value:mod1:toggle').node.fire('click',{button:0});
- assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
+ for(let i=0;i<12;i++){
+  if(i%2===0)q.phase('select','pressed');else q.clickConfirm();
+  assert.strictEqual(!!q.state.drafts['value:mod1:toggle'],i%2===0);
+  assert.strictEqual(q.state.controller.confirmDispatching,false);
+ }
+ for(let i=0;i<4;i++){
+  q.clickConfirm();assert.strictEqual(!!q.state.drafts['value:mod1:toggle'],i%2===0);
+ }
  cases++;
+
+ // Suppress only synchronous reentry or the native SimulatingMouse flag.
+ // Both outer routes recover even when the invoked callback throws.
+ const mixed=fixture(managerFile);mixed.tap('down');mixed.focus('toggle:value:mod1:toggle');
+ for(const [index,outer] of ['action','click'].entries()){
+  const node=mixed.target('toggle:value:mod1:toggle').node,invoke=node.echoInvoke;
+  node.echoInvoke=function(){mixed.ctx.InputMgr.Event_Input_Select();mixed.clickConfirm();return invoke();};
+  if(outer==='action')mixed.phase('select','pressed');else mixed.clickConfirm();
+  assert.strictEqual(!!mixed.state.drafts['value:mod1:toggle'],index===0);
+  assert.strictEqual(mixed.state.controller.confirmDispatching,false);
+ }
+ assert.strictEqual(mixed.state.controller.counts.confirm_reentrant,4);
+ const throwing=mixed.target('toggle:value:mod1:toggle').node,invoke=throwing.echoInvoke;
+ throwing.echoInvoke=function(){throw new Error('fixture selection failure');};
+ assert.throws(()=>mixed.phase('select','pressed'),/fixture selection failure/);
+ assert.strictEqual(mixed.state.controller.confirmDispatching,false);
+ throwing.echoInvoke=invoke;mixed.clickConfirm();
+ assert.strictEqual(mixed.state.drafts['value:mod1:toggle'].value,false);
+ cases++;
+
+ const releaseFree=fixture(managerFile);releaseFree.tap('down');releaseFree.focus(pkey);
+ for(let i=0;i<8;i++){
+  releaseFree.phase('select','pressed');assert(releaseFree.state.controller.edit);
+  releaseFree.phase('select','pressed');assert(!releaseFree.state.controller.edit);
+  releaseFree.clickConfirm();assert(releaseFree.state.controller.edit);
+  releaseFree.clickConfirm();assert(!releaseFree.state.controller.edit);
+ }
+ assert.strictEqual(releaseFree.pending.length,0);cases++;
 
  // Minus, slider and Plus are separate targets, with independent Confirm.
  // In slider edit, directions adjust the value and never leave the control.
@@ -393,7 +606,7 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
 
  // The real ListMenu early-return leaves input unregistered on reopening
  // without ECHO's reconciliation. Re-enable the bridge, then repeat the exact
- // native callbacks with a frozen, unchanged entriesrev and held Confirm.
+ // native callbacks with a frozen, unchanged entriesrev and Press-only Confirm.
  const s=fixture(managerFile),skey='value:mod1:offset',smodel=JSON.stringify(s.widget.DataModel);
  const restore=s.ctx.echoControllerRestoreInput;s.ctx.echoControllerRestoreInput=function(){};
  s.emitWidget('Deactivate');s.emitWidget('ManualDeactivate');s.emitWidget('Activate');s.emitWidget('DataUpdated');
@@ -409,7 +622,8 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
   s.tap('down');s.focus(skey);s.phase('select','pressed');assert(s.state.controller.edit);
   s.tap('right');s.cancel();assert(!s.state.controller.edit);
   assert.strictEqual(JSON.stringify(s.widget.DataModel),smodel);assert.strictEqual(s.widget.LastEntryRev,7);
-  s.phase('select','pressed');assert(s.state.controller.confirmHeld); // no release before closing
+  s.phase('select','pressed');assert(s.state.controller.edit); // no release before closing
+  assert.strictEqual(s.state.controller.confirmDispatching,false);
  }
  cases++;
 
@@ -446,5 +660,187 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(oldState.visible,false);assert(!oldState.controller.edit);
  assert.strictEqual(t.ctx.InputMgr.NavigationStack.filter(entry=>entry.WidgetId===replacement.id).length,1);
  cases++;
+ // Language popup owns a bounded focus context, cancel registration and a
+ // third temporary scroll pane. Browsing cannot change a preference or draft.
+ const lang=fixture(managerFile),names=JSON.parse(source('../src/bl4_echo_mod_menu/languages.json'));
+ const languages=()=>lang.state.root.querySelectorAll('.echo-language-option');
+ const open=()=>{lang.focus('language:select');lang.tap('select');assert(lang.state.languageMenu);};
+ lang.focus('value:mod1:offset');lang.tap('select');lang.tap('right');lang.tap('select');
+ const draftBefore=JSON.stringify(lang.state.drafts),modelBefore=JSON.stringify(lang.widget.DataModel);
+ open();assert.strictEqual(languages().length,14);
+ const fontStyle=lang.doc.getElementById('echo-language-fonts');
+ assert(fontStyle);assert.strictEqual((fontStyle.textContent.match(/@font-face/g)||[]).length,6);
+ for(const font of JSON.parse(source('../ui/fonts/manifest.json')).fonts.filter(row=>row.code!=='latin')){
+  assert(fontStyle.textContent.includes('coui://uiresources/echo_mod_menu/fonts/'+font.file));
+  assert(languages().find(n=>n.getAttribute('lang')===font.code).querySelector('.echo-language-name').style.cssText.includes(font.family));
+ }
+ assert.deepStrictEqual(languages().map(n=>n.getAttribute('lang')),names.map(n=>n.code));
+ assert.deepStrictEqual(languages().map(n=>n.querySelector('.echo-language-name').textContent),names.map(n=>n.name));
+ assert.strictEqual(lang.state.controller.current,'language-option:en');
+ assert.strictEqual(lang.escapeStacks.get(lang.widget.WidgetIdent).length,1);
+ assert.strictEqual(lang.state.scrollPanes.length,3);
+ lang.tap('left');lang.tap('right');assert.strictEqual(lang.state.controller.current,'language-option:en');
+ lang.tap('down');assert.strictEqual(lang.state.controller.current,'language-option:fr');
+ assert.strictEqual(lang.state.preference,'en');assert.strictEqual(lang.pending.length,0);
+ lang.cancel();assert(!lang.state.languageMenu);assert.strictEqual(lang.rootBack,0);
+ assert.strictEqual(lang.state.controller.current,'language:select');
+ assert.strictEqual(lang.ctx.InputMgr.CurrElement,lang.target('language:select').node);
+ assert.strictEqual(lang.escapeStacks.get(lang.widget.WidgetIdent).length,0);
+ assert.strictEqual(lang.state.scrollPanes.length,2);assert(lang.env.observers.at(-1).disconnected);
+ assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+ assert.strictEqual(lang.doc.getElementById('echo-language-fonts'),fontStyle);
+ assert.strictEqual(lang.doc.body.querySelectorAll('style').filter(n=>n.id==='echo-language-fonts').length,1);
+
+ open();lang.tap('down');lang.tap('select');assert(!lang.state.languageMenu);
+ let languageRequest=lang.pending.shift();assert(languageRequest.url.endsWith('/preferences'));
+ assert.strictEqual(languageRequest.body.language,'fr');assert.strictEqual(lang.pending.length,0);
+ lang.reply(languageRequest,{preferences:{language:'fr'}});
+ assert.strictEqual(lang.state.preference,'fr');assert.strictEqual(lang.ctx.echoLanguage(lang.state),'fr');
+ assert.strictEqual(lang.ctx.echoT(lang.state,'save'),require('./frontend_sources').translations.fr.save);
+ assert.strictEqual(lang.state.root.querySelector('.echo-language-current').textContent,'Français');
+ assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+
+ // Selecting a language restores the trigger as semantic focus. It must
+ // immediately reopen without a direction/focus change, using either route.
+ lang.pointerConfirm();assert(lang.state.languageMenu);
+ lang.pointerConfirm();assert(!lang.state.languageMenu);
+ languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'fr');
+ lang.reply(languageRequest,{preferences:{language:'fr'}});
+ lang.tap('select');assert(lang.state.languageMenu);
+ lang.tap('select');assert(!lang.state.languageMenu);
+ languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'fr');
+ lang.reply(languageRequest,{preferences:{language:'fr'}});
+ assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+
+ for(const route of ['action','click','action','click']){
+  const confirm=()=>route==='action'?lang.phase('select','pressed'):lang.clickConfirm();
+  confirm();assert(lang.state.languageMenu);
+  confirm();assert(!lang.state.languageMenu);
+  languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'fr');
+  lang.reply(languageRequest,{preferences:{language:'fr'}});
+  assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);
+ }
+ cases++;
+
+ // The game's live culture is resolved independently from translated menu
+ // text availability. Auto keeps the Chinese/Spanish regional distinctions.
+ const aliases={'de-DE':'de','fr-FR':'fr','es_ES':'es-es','es-MX':'es-419','pt-BR':'pt-br',
+  'zh-CN':'zh-hans','zh-TW':'zh-hant','zh-Hant-HK':'zh-hant','ja-JP':'ja','ko-KR':'ko','th-TH':'th','unknown':'en'};
+ for(const [code,expected] of Object.entries(aliases))assert.strictEqual(lang.ctx.echoLocale(code),expected,code);
+ lang.ctx.LanguageSettings.CurrentLangCode='zh-TW';lang.focus('language:auto');lang.tap('select');
+ languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'auto');
+ lang.reply(languageRequest,{preferences:{language:'auto'}});
+ assert.strictEqual(lang.state.root.querySelector('.echo-language-current').textContent,'繁體中文');
+ open();assert.strictEqual(lang.state.controller.current,'language-option:zh-hant');lang.cancel();cases++;
+
+ // Model a small viewport: the last entries are revealed by D-pad scrolling,
+ // and both ends clamp without navigating into the surrounding menu.
+ lang.state.preference='en';lang.ctx.echoDraw(lang.state);open();
+ const languagePane=lang.state.languageMenu.pane;
+ languagePane.view._clientHeight=100;languagePane.view._scrollHeight=14*41;
+ languagePane.view._rect={left:0,top:0,width:280,height:100};
+ languagePane.track._clientHeight=100;
+ languages().forEach((n,index)=>{n.getBoundingClientRect=()=>({left:0,right:250,width:250,height:38,
+  top:index*41-(languagePane.view.scrollTop||0),bottom:index*41-(languagePane.view.scrollTop||0)+38});});
+ lang.ctx.echoSyncScroll(languagePane,true);
+ for(let i=0;i<15;i++)lang.tap('down');
+ assert.strictEqual(lang.state.controller.current,'language-option:es-419');assert.strictEqual(languagePane.view.scrollTop,languagePane.range);
+ assert.strictEqual(lang.target('language-option:es-419').node.dataset.echoControllerFocus,'edit');
+ for(let i=0;i<15;i++)lang.tap('up');
+ assert.strictEqual(lang.state.controller.current,'language-option:en');assert.strictEqual(languagePane.view.scrollTop,0);
+ lang.cancel();cases++;
+
+ // Cursor handoff retains the open popup. A pointer selection applies once;
+ // a row detached by cancel cannot submit a stale preference later.
+ open();const staleLanguage=languages()[5];
+ lang.ctx.InputMgr.ResetCursorInput({clientX:260,clientY:160});
+ assert(lang.state.languageMenu);assert(!lang.state.controller.directional);
+ staleLanguage.click();languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'ja');
+ lang.reply(languageRequest,{preferences:{language:'ja'}});
+ assert.strictEqual(lang.pending.length,0);staleLanguage.click();assert.strictEqual(lang.pending.length,0);
+ assert.strictEqual(lang.state.root.querySelector('.echo-language-current').textContent,'日本語');cases++;
+
+ // The outside dismissal consumes both halves of a real pointer click.
+ open();lang.ctx.InputMgr.ResetCursorInput({clientX:261,clientY:161});
+ const underlying=lang.target('mod:library').node;
+ underlying.fire('mousedown',{button:0});underlying.fire('mouseup',{button:0});underlying.fire('click',{button:0});
+ assert(!lang.state.languageMenu);assert.strictEqual(lang.state.selected,'mod1');assert.strictEqual(lang.pending.length,0);cases++;
+
+ // Keyboard input in cursor mode uses the same preview/commit/cancel rules.
+ open();lang.ctx.InputMgr.ResetCursorInput({clientX:262,clientY:162});
+ let languageTrigger=lang.state.root.querySelector('.echo-language-trigger');
+ languageTrigger.fire('keydown',{key:'ArrowDown'});
+ assert.strictEqual(lang.state.controller.current,'language-option:ko');
+ languageTrigger.fire('keydown',{key:'Escape'});
+ assert(!lang.state.languageMenu);assert.strictEqual(lang.pending.length,0);
+ open();lang.ctx.InputMgr.ResetCursorInput({clientX:263,clientY:163});
+ languageTrigger=lang.state.root.querySelector('.echo-language-trigger');
+ languageTrigger.fire('keydown',{key:'ArrowUp'});languageTrigger.fire('keydown',{key:'Enter'});
+ languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'es-es');
+ lang.reply(languageRequest,{preferences:{language:'es-es'}});
+ const localized={name:'Original',name_i18n:{'es':'Compartido','es-mx':'Latino','en':'English','zh-tw':'繁體'}};
+ lang.state.preference='es-419';assert.strictEqual(lang.ctx.echoModText(lang.state,localized,'name'),'Latino');
+ lang.state.preference='zh-hant';assert.strictEqual(lang.ctx.echoModText(lang.state,localized,'name'),'繁體');
+ lang.state.preference='ja';assert.strictEqual(lang.ctx.echoModText(lang.state,localized,'name'),'English');
+ lang.ctx.echoDraw(lang.state);cases++;
+
+ // Every shipped locale is selected through the actual dropdown and native
+ // Confirm path. Translation and font changes must not rewrite an SDK draft.
+ const dictionaries=require('./frontend_sources').translations;
+ const retainedHint=lang.state.regions.sessionHint;
+ for(const locale of names){
+  open();
+  while(lang.state.controller.current!=='language-option:'+locale.code){
+   const wanted=names.findIndex(row=>row.code===locale.code);
+   const current=names.findIndex(row=>'language-option:'+row.code===lang.state.controller.current);
+   lang.tap(wanted<current?'up':'down');
+  }
+  lang.tap('select');
+  const request=lang.pending.shift();assert(request.url.endsWith('/preferences'));
+  assert.strictEqual(request.body.language,locale.code);
+  lang.reply(request,{preferences:{language:locale.code}});
+  assert.strictEqual(lang.state.root.querySelector('.echo-mode').textContent,dictionaries[locale.code].configuration);
+  assert.strictEqual(lang.state.saveButton.textContent,dictionaries[locale.code].save);
+  assert.strictEqual(lang.state.root.querySelector('.echo-session-hint').textContent,dictionaries[locale.code].sessionHint);
+  assert(lang.state.root.style.fontFamily.includes('ECHO Menu Font LATIN'));
+  if(['ja','ko','zh-hans','zh-hant','th'].includes(locale.code))assert(lang.state.root.style.fontFamily.includes('ECHO Menu Font '+locale.code.toUpperCase()));
+  assert.strictEqual(lang.state.regions.sessionHint,retainedHint);
+  // Root-only checks missed the in-game failure: text nodes themselves must
+  // receive the concrete family, including retained regions after a switch.
+  for(const node of lang.state.root.querySelectorAll('*')){
+   if(!node._text)continue;
+   const wanted=node.echoFontLocale?lang.ctx.echoLanguageFont(node.echoFontLocale):lang.ctx.echoMenuFont(locale.code);
+   assert.strictEqual(node.style.fontFamily,wanted,locale.code+' '+node.className+' '+node._text);
+  }
+  assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);
+  assert.strictEqual(lang.pending.length,0);assert.strictEqual(lang.state.epoch,'e1');
+  assert.strictEqual(lang.doc.getElementById('echo-language-fonts'),fontStyle);
+  cases++;
+ }
+ lang.state.preference='fr';const translatedSave=lang.ctx.echoTranslations.fr.save;
+ delete lang.ctx.echoTranslations.fr.save;
+ assert.strictEqual(lang.ctx.echoT(lang.state,'save'),dictionaries.en.save);
+ lang.ctx.echoTranslations.fr.save=translatedSave;
+ lang.state.preference='ja';lang.ctx.echoDraw(lang.state);
+
+ // Native hide/deactivate, OS blur and redraw all relinquish the exact cancel
+ // owner. Reopening never resurrects a popup or its detached row callbacks.
+ lang.widget.SupportsHideFlags=true;
+ for(const boundary of ['hide','blur','redraw','deactivate']){
+  open();const oldLanguage=languages()[0];
+  if(boundary==='hide'){lang.widget.HideFlags=2;lang.ctx.echoOnEditorLifecycle(lang.widget,'Event_DataUpdated');
+   lang.widget.HideFlags=0;lang.ctx.echoOnEditorLifecycle(lang.widget,'Event_DataUpdated');}
+  if(boundary==='blur')lang.env.events.blur();
+  if(boundary==='redraw')lang.ctx.echoDraw(lang.state);
+  if(boundary==='deactivate'){lang.emitWidget('Deactivate');lang.emitWidget('Activate');}
+  while(lang.pending.length)lang.reply(lang.pending.shift(),{preferences:{language:'ja'}});
+  assert(!lang.state.languageMenu);assert.strictEqual(lang.state.scrollPanes.length,2);
+  assert.strictEqual(lang.escapeStacks.get(lang.widget.WidgetIdent).length,0);
+  oldLanguage.click();assert.strictEqual(lang.pending.length,0);
+ }
+ open();lang.cancel();lang.cancel();assert.strictEqual(lang.rootBack,1);
+ assert.strictEqual(JSON.stringify(lang.widget.DataModel),modelBefore);
+ assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+ console.log('PASS: language popup labels/regions, Auto aliases, D-pad/Confirm/Cancel, scrolling, cursor handoff, outside dismissal, stale nodes and lifecycle cleanup with '+managerFile+'.');
 }
 console.log('PASS: '+cases+' controller scenarios using both exported original InputManager variants; C++ escape dispatch and DOM geometry modeled, no BL4 runtime claim.');

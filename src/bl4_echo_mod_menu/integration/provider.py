@@ -263,6 +263,8 @@ class ProviderSession:
             if field in self.source:
                 localized(row, field, self.source[field], row[field], 200 if field == 'name' else 1500)
         if not self.available:
+            if 'unavailable_reason' not in self.source:
+                row['integration_notice_key'] = 'providerReadOnly'
             localized(row, 'integration_notice', self.source.get('unavailable_reason', {
                 'en': 'This mod currently permits reading its additional settings only.',
                 'de': 'Diese Mod erlaubt derzeit nur das Lesen ihrer zusätzlichen Einstellungen.'}), limit=1500)
@@ -288,6 +290,7 @@ def enrich(mod, row, bindings, digest):
         localized(row, 'integration_notice', {
             'en': 'The optional menu integration is unavailable. Standard SDK settings are shown.',
             'de': 'Die optionale Menü-Anbindung ist nicht verfügbar. Die normalen SDK-Einstellungen werden angezeigt.'})
+        row['integration_notice_key'] = 'integrationFallback'
         return None
     row.clear()
     row.update(candidate)

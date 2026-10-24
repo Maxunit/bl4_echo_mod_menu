@@ -1,7 +1,7 @@
 # ECHO Mod Menu
 
 A native Mods tab for Borderlands 4, with automatic SDK mod discovery, staged
-settings, keyboard rebinding, English/German text and controller navigation.
+settings, keyboard rebinding, language selection and controller navigation.
 
 ## Installation
 
@@ -40,6 +40,24 @@ translations and additional settings through [API v1](docs/API.md).
 - Changing the menu language preserves the current draft. Mod descriptions are
   translated only when their author supplies translations.
 
+### Language selection
+
+Choose **Auto** to follow the game's text language, or open the adjacent dropdown
+to select one of 14 languages by its native name. Spanish (Spain/Latin America)
+and Chinese (Simplified/Traditional) have separate selections.
+
+ECHO's own menu texts are translated into all 14 selectable languages.
+Mod-provided translations use the selected language, with English fallback when
+needed. This selection changes ECHO's language independently of the game.
+
+Confirm opens the list. D-pad up/down navigates and scrolls within it; Confirm
+applies the selection and Cancel closes the list without changing the language.
+Mouse and virtual gamepad cursor selection are also supported.
+
+Bundled TrueType fonts cover ECHO's translated menu text and language names,
+including Latin, Cyrillic and the five Asian scripts. Windows language packs are
+not required. Mod names, descriptions and option text remain supplied by each mod.
+
 Keyboard capture supports individual supported keyboard keys. It does not add
 an on-screen keyboard or physical gamepad-button rebinding.
 
@@ -61,10 +79,16 @@ See [controls](docs/CONTROLS.md) for focus, capture and cancellation details.
 
 Ordinary SDK mods need no ECHO dependency or integration file. Start with the
 [author guide](docs/MOD_AUTHORS.md), then use the full [API reference](docs/API.md).
-The [example source](https://github.com/Maxunit/bl4_echo_mod_menu/blob/main/examples/echo_menu_example/__init__.py) demonstrates standard
-options, real keybinds, translated metadata, a preset and mod-owned persistence.
-The optional built example is `examples/echo_menu_example.sdkmod` in the install package; copy it
-into `sdk_mods` only when wanted. It does not affect gameplay.
+
+| Complete example | Demonstrates |
+| --- | --- |
+| [Level 2](examples/echo_menu_level2/__init__.py) | SDK-owned options, categories, presets, conditions and translated names/descriptions. |
+| [Level 3](examples/echo_menu_level3/__init__.py) | Custom JSON loading/saving, validated callbacks, a queued Reset action and ordering. |
+| [Combined](examples/echo_menu_example/__init__.py) | SDK options, a registered keybind and separate mod-owned persistence. |
+
+The install package includes each source folder and a matching optional SDKMOD
+under `examples/`. Copy only the example SDKMODs you want into `sdk_mods`.
+These examples store settings and do not affect gameplay.
 
 ## Developer sources
 
@@ -85,6 +109,6 @@ not part of this repository.
 
 ## Version
 
-Current version: **1.0.0**, provider API **1**. See the
+Current version: **1.2.4**, provider API **1**. See the
 [changelog](CHANGELOG.md), [compatibility](COMPATIBILITY.md) and
 [third-party notices](THIRD_PARTY_NOTICES.md).

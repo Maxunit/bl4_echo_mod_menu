@@ -67,6 +67,19 @@ def fixture():
 
 
 class Tests(unittest.TestCase):
+    def test_manager_notice_keys_do_not_override_author_explanations(self):
+        mod,state,calls,provider,listing,registry,row=fixture()
+        state['allowed']=False
+        readonly=registry.capture()['mods'][0]
+        self.assertEqual(readonly['integration_notice_key'],'providerReadOnly')
+        provider['unavailable_reason']={'fr':'Explication de l’auteur','en':'Author explanation'}
+        custom=registry.capture()['mods'][0]
+        self.assertNotIn('integration_notice_key',custom)
+        self.assertEqual(custom['integration_notice_i18n']['fr'],'Explication de l’auteur')
+        provider['api_version']=999
+        fallback=registry.capture()['mods'][0]
+        self.assertEqual(fallback['integration_notice_key'],'integrationFallback')
+
     def test_three_levels_are_plain_json_and_preserve_sdk_authority(self):
         mod, state, calls, provider, listing, registry, row = fixture()
         self.assertEqual(row['integration']['status'], 'active')
