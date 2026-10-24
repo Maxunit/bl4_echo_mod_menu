@@ -1,7 +1,7 @@
 """Build installable SDKMOD/PAK packages and a deterministic developer archive."""
 from pathlib import Path
 import ast,hashlib,importlib.util,json,shutil,zipfile
-from package_build import ROOT,SOURCE,MODULE,ARCHIVE_NAME,add_bytes,write_sdkmod,runtime_files
+from package_build import ROOT,SOURCE,MODULE,ARCHIVE_NAME,add_bytes,write_sdkmod,runtime_files,ordered_paths
 from pak_codec import read_pak,write_pak
 PACKAGE=ROOT/'package'
 DIST=ROOT/'dist'
@@ -17,7 +17,7 @@ def version():
 
 def native_resources():
     base=ROOT/'native/resources'
-    return {p.relative_to(base).as_posix():p.read_bytes() for p in sorted(base.rglob('*')) if p.is_file()}
+    return {p.relative_to(base).as_posix():p.read_bytes() for p in ordered_paths(base.rglob('*')) if p.is_file()}
 
 def write_native_tag_config():
     spec=importlib.util.spec_from_file_location('_echo_tag_rules',MODULE/'native_installation.py')
@@ -45,11 +45,11 @@ def build_example():
     source=ROOT/'examples/echo_menu_example'
     target=PACKAGE/'examples/echo_menu_example.sdkmod';target.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(target,'w') as archive:
-        for p in sorted(source.rglob('*.py')):add_bytes(archive,'echo_menu_example/'+p.relative_to(source).as_posix(),p.read_bytes())
+        for p in ordered_paths(source.rglob('*.py')):add_bytes(archive,'echo_menu_example/'+p.relative_to(source).as_posix(),p.read_bytes())
 
 def source_files():
     for folder in ('src','ui','native','tools','tests','docs','examples','.github'):
-        for p in sorted((ROOT/folder).rglob('*')):
+        for p in ordered_paths((ROOT/folder).rglob('*')):
             if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc':yield p
     for name in ('README.md','CHANGELOG.md','COMPATIBILITY.md','THIRD_PARTY_NOTICES.md','.gitignore','.gitattributes'):
         yield ROOT/name
@@ -70,7 +70,7 @@ def main():
               'functional_baseline_game_tested':True,'publication_cleanup_game_tested':False,
               'runtime_sha256':{p.relative_to(SOURCE).as_posix():sha(p.read_bytes()) for p in runtime_files()}}
     (PACKAGE/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8',newline='\n')
-    files=sorted(p for p in PACKAGE.rglob('*') if p.is_file())
+    files=ordered_paths(p for p in PACKAGE.rglob('*') if p.is_file())
     (PACKAGE/'SHA256SUMS.txt').write_text(''.join(sha(p.read_bytes())+'  '+p.relative_to(PACKAGE).as_posix()+'\n' for p in files),encoding='utf-8',newline='\n')
     installer=DIST/('ECHO_Mod_Menu_'+release+'.zip')
     with zipfile.ZipFile(installer,'w') as archive:

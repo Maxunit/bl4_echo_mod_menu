@@ -7,8 +7,12 @@ MODULE=SOURCE/'bl4_echo_mod_menu'
 ARCHIVE_NAME='bl4_echo_mod_menu.sdkmod'
 ZIP_TIME=(2026,1,1,0,0,0)
 
+def ordered_paths(paths):
+    # Path comparison follows host case rules; ZIP member order must not.
+    return sorted(paths,key=lambda path:path.as_posix())
+
 def runtime_files():
-    return sorted(p for p in MODULE.rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py','.json'))
+    return ordered_paths(p for p in MODULE.rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix in ('.py','.json'))
 
 def add_bytes(archive,name,data):
     info=zipfile.ZipInfo(name,ZIP_TIME)
