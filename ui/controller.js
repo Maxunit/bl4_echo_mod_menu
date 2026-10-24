@@ -322,6 +322,23 @@ function echoControllerSelect(state, node) {
     echoControllerPaint(state);
     echoControllerLog(state, 'select', {target:target.id, kind:target.kind || 'button'});
 }
+function echoControllerConfirm(state, node, route) {
+    if (!node) return;
+    var nav = state.controller;
+    // Match the native InputManager: each PRESSED callback is a selection.
+    // Do not hold a latch until RELEASED or require a mouse down/up sequence;
+    // those optional phases may never reach this view on a given input route.
+    // Only reject a known native synthetic mouse event or synchronous reentry.
+    if (route === 'click' && typeof InputMgr !== 'undefined' && InputMgr.SimulatingMouse) {
+        echoControllerLog(state, 'confirm_synthetic', {}); return;
+    }
+    if (nav.confirmDispatching) { echoControllerLog(state, 'confirm_reentrant', {}); return; }
+    nav.confirmDispatching = true;
+    nav.confirmRoute = route; // last source for diagnostics, never an input gate
+    echoControllerLog(state, 'confirm_' + route, {target:node.echoControllerTarget && node.echoControllerTarget.id});
+    try { return echoControllerSelect(state, node); }
+    finally { nav.confirmDispatching = false; }
+}
 function echoControllerPointerAllowed(state) {
     return !(state.controller && state.controller.available && typeof InputMgr !== 'undefined' &&
         echoControllerState(InputMgr) === state && InputMgr.ShouldBlockCursorInput());
@@ -330,7 +347,7 @@ function echoControllerSuspend(state, preserveLanguage) {
     if (!state.controller) return;
     if (!preserveLanguage) echoLanguageClose(state,false);
     echoControllerEndEdit(state, true);
-    state.controller.directional = false; state.controller.confirmHeld = false; state.controller.confirmRoute = ''; state.controller.confirmPointerDown = false;
+    state.controller.directional = false; state.controller.confirmRoute = '';
     echoControllerPaint(state);
 }
 function echoControllerRestoreInput(state) {
@@ -343,7 +360,7 @@ function echoControllerRestoreInput(state) {
     // real Activate boundary, through the original native registration path.
     // This preserves the native priority stack and never edits the model.
     widget.UpdateInputRegistration();
-    state.controller.confirmHeld = false; state.controller.confirmRoute = ''; state.controller.confirmPointerDown = false;
+    state.controller.confirmRoute = '';
     echoControllerLog(state, 'input_registration', {input_active:!!widget.inputActive});
 }
 var echoControllerClickInstalled = false;
@@ -363,23 +380,9 @@ function echoControllerInstallClick() {
             // the semantic focus, not to the cursor's previous coordinates.
             if (event.preventDefault) event.preventDefault();
             if (event.stopImmediatePropagation) event.stopImmediatePropagation(); else event.stopPropagation();
-            var nav = state.controller;
-            if (type === 'mousedown') {
-                // A new physical press starts another Confirm gesture. Keep
-                // an overlapping logical press's route until its click passes.
-                if (!nav.confirmPointerDown && !nav.confirmHeld) nav.confirmRoute = '';
-                nav.confirmPointerDown = true;
-                return;
-            }
-            if (type === 'mouseup') { nav.confirmPointerDown = false; return; }
-            if (state.busy || !state.active) return;
-            // A logical Confirm already handled this gesture. Its trailing
-            // synthetic click must not toggle or enter an editor a second time.
-            if (nav.confirmRoute === 'action') return;
+            if (type !== 'click' || state.busy || !state.active) return;
             var target = echoControllerCurrent(state); if (!target) return;
-            nav.confirmRoute = 'click';
-            echoControllerLog(state, 'confirm_click', {target:target.id});
-            echoControllerSelect(state, target.node);
+            echoControllerConfirm(state, target.node, 'click');
         }, true);
     });
 }
@@ -413,12 +416,10 @@ function echoControllerInstall(state) {
     prototype.Event_Input_Select = function () {
         var current = echoControllerState(this);
         if (!current || this.IsUsingCursor()) return inputSelect.apply(this, arguments);
-        if (current.controller.confirmRoute === 'click') return;
-        current.controller.confirmRoute = 'action';
         // The semantic focus survives a redraw even if the native DOM cache
         // still points at a detached node or was cleared by the host.
         var target = echoControllerCurrent(current) || echoControllerDefault(current);
-        if (target) return echoControllerSelect(current, target.node);
+        if (target) return echoControllerConfirm(current, target.node, 'action');
     };
     var select = prototype.SelectElement;
     prototype.SelectElement = function (node) {
@@ -431,32 +432,13 @@ function echoControllerInstall(state) {
         }
         // Own ECHO targets have no native model indices. Route once directly;
         // the original would emit InputSelectionChanged AND synthesize a click.
-        if (!this.IsUsingCursor()) return echoControllerSelect(current, node);
+        if (!this.IsUsingCursor()) return echoControllerConfirm(current, node, 'select');
     };
     var defaultFocus = prototype.FocusDefaultElement;
     prototype.FocusDefaultElement = function () {
         var current = echoControllerState(this);
         if (!current) return defaultFocus.apply(this, arguments);
         return !this.IsUsingCursor() && echoControllerFocus(current, echoControllerDefault(current));
-    };
-    var action = prototype.OnInputAction;
-    prototype.OnInputAction = function (name, type) {
-        var current = echoControllerState(this);
-        if (current && type == InputActionType.PRESSED &&
-            [INPUT_NAV_UP,INPUT_NAV_RIGHT,INPUT_NAV_DOWN,INPUT_NAV_LEFT].indexOf(name) >= 0) {
-            if (!current.controller.confirmHeld) current.controller.confirmRoute = '';
-        }
-        if (current && name === INPUT_NAV_SELECTED) {
-            if (type == InputActionType.PRESSED && current.controller.confirmHeld) return;
-            if (type == InputActionType.PRESSED) {
-                // Press after Release is a new gesture, including on the same
-                // control after a redraw. Never wait for a direction to rearm.
-                current.controller.confirmHeld = true; current.controller.confirmRoute = 'action';
-                echoControllerLog(current, 'confirm_action', {target:current.controller.current});
-            }
-            if (type == InputActionType.RELEASED) current.controller.confirmHeld = false;
-        }
-        return action.apply(this, arguments);
     };
     var cursor = prototype.ResetCursorInput;
     prototype.ResetCursorInput = function () {
@@ -471,7 +453,7 @@ function echoControllerMount(state) {
     if (state.controller) { echoControllerInstall(state); return; }
     var widget = state.widget, originalEscape = widget.Event_TriggerCohEscapeInput;
     state.controller = {available:false, capabilityIssue:'', escapeCapable:typeof originalEscape === 'function', escapeRegistered:false,
-        directional:false, current:'', region:'mods', targets:[], memory:{}, categories:{}, edit:null, confirmHeld:false, confirmRoute:'', confirmPointerDown:false, records:0, counts:{}};
+        directional:false, current:'', region:'mods', targets:[], memory:{}, categories:{}, edit:null, confirmDispatching:false, confirmRoute:'', records:0, counts:{}};
     if (typeof originalEscape === 'function') widget.Event_TriggerCohEscapeInput = function (ident) {
         var cancel = echoControllerContext(state);
         if (ident === echoControllerEscape && state.visible && !state.closed && state.widget.IsActivated && cancel) {

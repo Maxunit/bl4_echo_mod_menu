@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.2 — Confirm without release prerequisites
+
+- Leave the original InputManager action dispatcher unchanged and handle each
+  native Confirm press independently, without waiting for a release event.
+- Accept repeated click-only Confirm delivery without requiring mouse down/up,
+  a direction change, a focus change or a matching logical action.
+- Replace persistent route/held-input gates with a synchronous reentry guard
+  and the native flag for deliberately simulated mouse clicks.
+- Compare Press-only behavior against both original InputManager variants and
+  cover repeated slider edits, language selection, mixed routes and exceptions.
+- Retain 1.2.1's explicit font assignment and all fourteen translations.
+
 ## 1.2.1 — font assignment and repeated Confirm
 
 - Apply concrete font stacks directly to menu text, controls and retained

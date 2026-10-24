@@ -15,6 +15,7 @@ function fixture(managerFile) {
  ctx.OakUtils={SetupHintBarParams:ident=>({ident}),SetupHintEntry:(action,text)=>({action,text})};
  vm.runInContext(source('fixtures/native_input/'+managerFile)+'\nthis.NativeInputManager=InputManager;',ctx);
  ctx.InputMgr=new ctx.NativeInputManager();
+ const nativeAction=ctx.NativeInputManager.prototype.OnInputAction;
  vm.runInContext(source('fixtures/native_input/input_behaviors.js'),ctx);
  vm.runInContext('class GbxCustomElement extends DomNode { constructor(){super("widget-list-menu");} Init(){} connectedCallback(){} }\n'+source('fixtures/native_input/widget_class_patch2.js')+'\nthis.NativeWidgetBase=WidgetBase;',ctx);
  vm.runInContext(source('fixtures/native_input/menu_base.js')+'\n'+source('fixtures/native_input/oak_menu_base.js')+'\nthis.NativeOakMenuBase=Widget_OakMenuBase;',ctx);
@@ -71,6 +72,7 @@ function fixture(managerFile) {
  function phase(name,type){globalActions.Input_OnAction(actions[name],actions[type]);}
  function tap(name){phase(name,'pressed');phase(name,'released');}
  function pointerConfirm(){for(const name of ['mousedown','mouseup','click'])doc.body.fire(name,{button:0});}
+ function clickConfirm(){doc.body.fire('click',{button:0});}
  function emitWidget(name){const handler=widgetEvents.get(widget.MakeEventName(name));assert(handler,'Missing native callback '+name);handler();}
  function target(id){return state.controller.targets.find(item=>item.id===id);}
  function focus(id){const node=target(id);assert(node,'Missing focus target '+id);ctx.InputMgr.OnNavigationTypeChanged(false);assert(ctx.echoControllerFocus(state,node));return node;}
@@ -78,13 +80,28 @@ function fixture(managerFile) {
   const current=ctx.InputMgr.CurrWidget,stack=current&&escapeStacks.get(current.WidgetIdent);
   if(stack&&stack.length)current.Event_TriggerCohEscapeInput(stack.at(-1));else rootBack++;
  }
- return {env,ctx,doc,Node,pending,nativeEvents,records,widget,state,mods,actions,phase,tap,pointerConfirm,target,focus,cancel,
+ return {env,ctx,doc,Node,pending,nativeEvents,records,widget,state,mods,actions,nativeAction,phase,tap,pointerConfirm,clickConfirm,target,focus,cancel,
   escapeStacks,host,reply,modelBefore,emitWidget,get rootBack(){return rootBack;}};
 }
 let cases=0;
 for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  const f=fixture(managerFile),{ctx,state,widget,tap,focus,target,phase,nativeEvents,pending}=f;
  const key='value:mod1:offset';
+ // The original contract selects on EVERY PRESSED event, with no RELEASED
+ // prerequisite. Compare it directly, rather than inventing a held-key gate.
+ const nativeOnly=new ctx.NativeInputManager();let nativeSelections=0;
+ nativeOnly.Event_Input_Select=()=>nativeSelections++;
+ for(let i=0;i<3;i++)f.nativeAction.call(nativeOnly,f.actions.select,f.actions.pressed);
+ assert.strictEqual(nativeSelections,3);
+ const pulses=fixture(managerFile);pulses.tap('down');pulses.focus('toggle:value:mod1:toggle');
+ const selectedAtStart=pulses.state.controller.counts.select||0;
+ for(let i=0;i<3;i++)pulses.phase('select','pressed');
+ assert.strictEqual(pulses.state.controller.counts.select-selectedAtStart,nativeSelections);
+ assert.strictEqual(ctx.NativeInputManager.prototype.OnInputAction,f.nativeAction);
+ assert.strictEqual(pulses.state.controller.confirmDispatching,false);
+ pulses.phase('select','released');
+ assert.strictEqual(pulses.state.controller.counts.select-selectedAtStart,nativeSelections);
+ cases++;
  // The first native direction establishes focus; the next moves through the
  // graph. No hidden original list entry or native model selection is used.
  tap('down');assert.strictEqual(state.controller.current,'mod:mod1');
@@ -107,11 +124,12 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(state.drafts.other.value,1);assert.strictEqual(JSON.stringify(state.saved),saved);
  assert.strictEqual(f.escapeStacks.get(widget.WidgetIdent).length,0);assert.strictEqual(f.rootBack,0);
  cases++;
- // Holding Confirm cannot reenter edit immediately after confirming it.
+ // Release is optional: another Press reopens the same slider immediately.
  tap('select');tap('left');assert.strictEqual(state.drafts[key].value,4);
  phase('select','pressed');assert(!state.controller.edit);
- phase('select','pressed');assert(!state.controller.edit);
+ phase('select','pressed');assert(state.controller.edit);
  phase('select','released');assert.strictEqual(state.drafts[key].value,4);
+ f.cancel();assert(!state.controller.edit);
  assert.strictEqual(f.escapeStacks.get(widget.WidgetIdent).length,0);
  cases++;
  // Native select would normally emit an indexed model selection and a
@@ -119,8 +137,10 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  focus('toggle:value:mod1:toggle');
  const selectedBefore=nativeEvents.filter(e=>/InputSelectionChanged$/.test(e[0])).length;
  phase('select','pressed');assert.strictEqual(state.drafts['value:mod1:toggle'].value,false);
+ phase('select','pressed');assert(!state.drafts['value:mod1:toggle']);
  phase('select','pressed');assert.strictEqual(state.drafts['value:mod1:toggle'].value,false);
- target('toggle:value:mod1:toggle').node.click();assert.strictEqual(state.drafts['value:mod1:toggle'].value,false);
+ ctx.InputMgr.SimulatingMouse=true;target('toggle:value:mod1:toggle').node.click();ctx.InputMgr.SimulatingMouse=false;
+ assert.strictEqual(state.drafts['value:mod1:toggle'].value,false);
  phase('select','released');
  assert.strictEqual(nativeEvents.filter(e=>/InputSelectionChanged$/.test(e[0])).length,selectedBefore);
  assert.strictEqual(JSON.stringify(widget.DataModel),f.modelBefore);
@@ -346,8 +366,7 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(p.state.controller.current,'category:mod1:bindings');padClick();
  assert.strictEqual(p.state.category,'bindings');assert.strictEqual(cursorClicks,0);
  assert.strictEqual(p.state.controller.confirmRoute,'click');
- // A direct logical callback for the same click cannot activate twice. A
- // subsequent native Press/Release, however, belongs to a new gesture.
+ // Direct logical callbacks remain usable after pointer-only selection.
  p.ctx.InputMgr.Event_Input_Select();assert.strictEqual(p.state.category,'bindings');
  p.tap('left');padClick();assert.strictEqual(p.state.category,'camera');
  p.tap('down');p.tap('down');assert.strictEqual(p.state.controller.current,pkey);
@@ -356,36 +375,46 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  padClick();assert(!p.state.controller.edit);assert.strictEqual(p.state.drafts[pkey].value,4);
  cases++;
 
- // Repeated Confirm stays usable on the SAME control after a redraw, even
- // when the host switches between logical actions and primary mouse cycles.
- // Bare synthetic copies do not establish a new physical press boundary.
+ // Neither route needs a release or mouse down/up event. Switching between
+ // bare clicks and native pulses must work without moving semantic focus.
  const q=fixture(managerFile);q.tap('down');q.focus('toggle:value:mod1:toggle');
- q.tap('select');assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
- q.target('toggle:value:mod1:toggle').node.fire('click',{button:0});
- assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
- q.pointerConfirm();assert(!q.state.drafts['value:mod1:toggle']);
- q.tap('select');assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
- q.target('toggle:value:mod1:toggle').node.fire('click',{button:0});
- assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
- q.tap('select');assert(!q.state.drafts['value:mod1:toggle']);
- q.pointerConfirm();assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
+ for(let i=0;i<12;i++){
+  if(i%2===0)q.phase('select','pressed');else q.clickConfirm();
+  assert.strictEqual(!!q.state.drafts['value:mod1:toggle'],i%2===0);
+  assert.strictEqual(q.state.controller.confirmDispatching,false);
+ }
+ for(let i=0;i<4;i++){
+  q.clickConfirm();assert.strictEqual(!!q.state.drafts['value:mod1:toggle'],i%2===0);
+ }
  cases++;
 
- // A physical click and a logical action may overlap in either down-event
- // order. Coalesce that gesture once, then rearm on the next actual press.
+ // Suppress only synchronous reentry or the native SimulatingMouse flag.
+ // Both outer routes recover even when the invoked callback throws.
  const mixed=fixture(managerFile);mixed.tap('down');mixed.focus('toggle:value:mod1:toggle');
- for(const pointerFirst of [true,false]){
-  if(pointerFirst)mixed.doc.body.fire('mousedown',{button:0});
-  mixed.phase('select','pressed');
-  if(!pointerFirst)mixed.doc.body.fire('mousedown',{button:0});
-  mixed.phase('select','pressed'); // held/repeated native delivery
-  mixed.phase('select','released');
-  mixed.doc.body.fire('mouseup',{button:0});mixed.doc.body.fire('click',{button:0});
-  assert.strictEqual(!!mixed.state.drafts['value:mod1:toggle'],pointerFirst);
+ for(const [index,outer] of ['action','click'].entries()){
+  const node=mixed.target('toggle:value:mod1:toggle').node,invoke=node.echoInvoke;
+  node.echoInvoke=function(){mixed.ctx.InputMgr.Event_Input_Select();mixed.clickConfirm();return invoke();};
+  if(outer==='action')mixed.phase('select','pressed');else mixed.clickConfirm();
+  assert.strictEqual(!!mixed.state.drafts['value:mod1:toggle'],index===0);
+  assert.strictEqual(mixed.state.controller.confirmDispatching,false);
  }
- mixed.pointerConfirm();assert.strictEqual(mixed.state.drafts['value:mod1:toggle'].value,false);
- mixed.tap('select');assert(!mixed.state.drafts['value:mod1:toggle']);
+ assert.strictEqual(mixed.state.controller.counts.confirm_reentrant,4);
+ const throwing=mixed.target('toggle:value:mod1:toggle').node,invoke=throwing.echoInvoke;
+ throwing.echoInvoke=function(){throw new Error('fixture selection failure');};
+ assert.throws(()=>mixed.phase('select','pressed'),/fixture selection failure/);
+ assert.strictEqual(mixed.state.controller.confirmDispatching,false);
+ throwing.echoInvoke=invoke;mixed.clickConfirm();
+ assert.strictEqual(mixed.state.drafts['value:mod1:toggle'].value,false);
  cases++;
+
+ const releaseFree=fixture(managerFile);releaseFree.tap('down');releaseFree.focus(pkey);
+ for(let i=0;i<8;i++){
+  releaseFree.phase('select','pressed');assert(releaseFree.state.controller.edit);
+  releaseFree.phase('select','pressed');assert(!releaseFree.state.controller.edit);
+  releaseFree.clickConfirm();assert(releaseFree.state.controller.edit);
+  releaseFree.clickConfirm();assert(!releaseFree.state.controller.edit);
+ }
+ assert.strictEqual(releaseFree.pending.length,0);cases++;
 
  // Minus, slider and Plus are separate targets, with independent Confirm.
  // In slider edit, directions adjust the value and never leave the control.
@@ -412,7 +441,7 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
 
  // The real ListMenu early-return leaves input unregistered on reopening
  // without ECHO's reconciliation. Re-enable the bridge, then repeat the exact
- // native callbacks with a frozen, unchanged entriesrev and held Confirm.
+ // native callbacks with a frozen, unchanged entriesrev and Press-only Confirm.
  const s=fixture(managerFile),skey='value:mod1:offset',smodel=JSON.stringify(s.widget.DataModel);
  const restore=s.ctx.echoControllerRestoreInput;s.ctx.echoControllerRestoreInput=function(){};
  s.emitWidget('Deactivate');s.emitWidget('ManualDeactivate');s.emitWidget('Activate');s.emitWidget('DataUpdated');
@@ -428,7 +457,8 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
   s.tap('down');s.focus(skey);s.phase('select','pressed');assert(s.state.controller.edit);
   s.tap('right');s.cancel();assert(!s.state.controller.edit);
   assert.strictEqual(JSON.stringify(s.widget.DataModel),smodel);assert.strictEqual(s.widget.LastEntryRev,7);
-  s.phase('select','pressed');assert(s.state.controller.confirmHeld); // no release before closing
+  s.phase('select','pressed');assert(s.state.controller.edit); // no release before closing
+  assert.strictEqual(s.state.controller.confirmDispatching,false);
  }
  cases++;
 
@@ -516,6 +546,16 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'fr');
  lang.reply(languageRequest,{preferences:{language:'fr'}});
  assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+
+ for(const route of ['action','click','action','click']){
+  const confirm=()=>route==='action'?lang.phase('select','pressed'):lang.clickConfirm();
+  confirm();assert(lang.state.languageMenu);
+  confirm();assert(!lang.state.languageMenu);
+  languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'fr');
+  lang.reply(languageRequest,{preferences:{language:'fr'}});
+  assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);
+ }
+ cases++;
 
  // The game's live culture is resolved independently from translated menu
  // text availability. Auto keeps the Chinese/Spanish regional distinctions.

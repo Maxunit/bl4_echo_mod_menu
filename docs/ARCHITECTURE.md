@@ -38,6 +38,14 @@ native inventory data. It attaches after the original WidgetManager method.
 Input registration is reconciled through original MenuBase behavior at activation
 so an unchanged native entries revision cannot strand a reopened menu.
 
+Confirm follows the original InputManager's per-PRESSED dispatch without
+replacing `OnInputAction`. There is no ECHO latch waiting for RELEASED, a mouse
+up event, a direction change or a particular preceding route. The bridge also
+accepts independent click-only delivery. It rejects known native simulated
+mouse events and synchronous selection reentry; the reentry guard is cleared
+in `finally`, including when the selected callback throws. Separate native
+presses remain separate inputs, as they are in the original dispatcher.
+
 ## Stable compiled identities
 
 The two native NCS resources retain private binding names such as
