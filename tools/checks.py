@@ -24,7 +24,7 @@ def main():
     run([sys.executable,'tools/check_repository.py'])
     report={'python_tests_per_import_mode':count,'import_modes':['source','sdkmod'],
             'controller_scenarios':int(re.search(r'PASS: (\d+) controller scenarios',controller).group(1)),
-            'native_cpp_and_cohtml':'modeled; publication bundle requires game smoke test',
+            'native_cpp_and_cohtml':'modeled; native runtime is not executed by offline tests',
             'source_hygiene':'passed'}
     out=ROOT/'build';out.mkdir(exist_ok=True)
     (out/'checks.json').write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8',newline='\n')

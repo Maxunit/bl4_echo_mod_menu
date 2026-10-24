@@ -9,8 +9,6 @@
     "OakGame/Content/uiresources/_shared/js/navigationbar.js": "8d71965e2292418b8440040975da436e3eafaf241662745381986aada42fdbc1"
   },
   "native_profile": "Steam 1.11 / PE 0xf38df04c / image size 0x26e12000",
-  "functional_baseline_game_tested": true,
-  "publication_cleanup_game_tested": false,
   "runtime_sha256": {
     "bl4_echo_mod_menu/__init__.py": "12506882e69b21a342de08f4ae1a1d2f3c6daeabab4ac088eadc85e49f5781cb",
     "bl4_echo_mod_menu/diagnostics.py": "522bf04b78b69036615cbe85cef5d2360a285b5a1b7c10a533f58205cdf7377e",

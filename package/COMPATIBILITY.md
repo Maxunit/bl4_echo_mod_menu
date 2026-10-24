@@ -18,12 +18,17 @@ ownership before calling native entry points. ASLR is accounted for. Install
 paths are discovered; no particular drive or account folder is required.
 
 A different executable is not approved merely because its displayed game version
-also says 1.11. Epic, console builds and later updates have not been validated.
+also says 1.11. Epic and later updates have not been validated.
 New profiles require a fresh native review; do not bypass the checks.
 
 The PAK is mounted by the game before Python can reject a native profile. The
 Python guard does not validate an incompatible mounted PAK. Install the complete
 mod only on the reviewed profile; remove its SDKMOD, PAK and tag INI to uninstall.
+
+## Linux / Proton
+
+Linux use requires running the Windows game and SDK through Proton, such as
+Proton Experimental. This environment has not been validated for ECHO.
 
 ## SDK and mod integrations
 
@@ -40,6 +45,5 @@ A malformed provider falls back for that mod; it does not authorize native work.
 The functional baseline passed in-game installation/autostart, editable options,
 keybind capture/rebinding, save-and-restart persistence, native inventory/pause
 menus, language switching and D-pad/Confirm/Cancel/slider use.
-The initial cleaned 1.0.0 publication bundle is tested offline and awaits its own
-smoke test. Screen formats and controller hardware beyond the tested setup are
+Screen formats and controller hardware beyond the tested setup are
 not implied by the offline DOM fixtures.

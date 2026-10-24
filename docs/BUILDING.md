@@ -2,6 +2,7 @@
 
 Requirements: Python 3.12+ and Node.js 24. No third-party pip/npm packages, game
 installation, personal game configuration or exported session reports are needed.
+Run these commands from the repository root on Windows:
 
 ```sh
 python tools/checks.py
@@ -19,7 +20,6 @@ registered ListMenu lifecycle, repeated reopen cycles and instance replacement.
 
 The native C++ boundary, physical input delivery, DOM geometry and Cohtml renderer
 are modeled. Offline tests do not certify native execution or in-game pixels.
-The cleaned publication bundle needs its final in-game smoke test.
 
 `tools/build.py` creates one SDKMOD with a matching package root, a checked PAK,
 external tag INI, optional example SDKMOD, English docs and checksums. Outputs:
@@ -29,11 +29,16 @@ external tag INI, optional example SDKMOD, English docs and checksums. Outputs:
 - `dist/ECHO_Mod_Menu_<version>_sources.zip`: portable developer source tree.
 - `dist/SHA256SUMS.txt`: archive checksums.
 
+Build instructions and architecture notes are included in the developer archive.
+The install package includes the user guide, controls, compatibility, changelog,
+third-party notices and mod-author/API documentation.
+
 ZIP timestamps, member order and permissions are fixed. The reproducibility
 check extracts the source archive into a clean directory, runs the build and
 compares both output archives byte-for-byte.
 
-GitHub Actions runs tests/build on Linux and Windows. Artifacts are uploaded per
-platform; no automatic release publishing or repository write token is needed.
+GitHub Actions runs tests and builds on `windows-latest`, uploading the installer,
+developer archive and checksums as `ECHO-Mod-Menu-Windows`. The workflow does not
+publish a GitHub Release automatically and uses read-only repository permissions.
 Diagnostic output is controlled separately from settings persistence with
 `ECHO_MOD_MENU_DIAGNOSTICS=1` before process startup.

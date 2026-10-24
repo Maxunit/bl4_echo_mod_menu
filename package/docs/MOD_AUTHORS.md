@@ -53,5 +53,5 @@ change state before failing; design for the documented partial-failure behavior.
 
 Read the full [API v1 specification](API.md), especially applying/saving,
 registration/reload and fallback rules. The complete runnable
-[example](../examples/echo_menu_example/__init__.py) demonstrates both standard
+[example](https://github.com/Maxunit/bl4_echo_mod_menu/blob/main/examples/echo_menu_example/__init__.py) demonstrates both standard
 SDK persistence and a separate JSON store owned by the example itself.

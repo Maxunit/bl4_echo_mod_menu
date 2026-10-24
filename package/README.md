@@ -5,8 +5,8 @@ settings, keyboard rebinding, English/German text and controller navigation.
 
 ## Installation
 
-Use the install package produced by **Build and test** under this repository's
-Actions tab, or the ready-to-install files in [`package/`](package/).
+Use the install package produced by **Build and test** under the repository's
+Actions tab, or its [ready-to-install files](https://github.com/Maxunit/bl4_echo_mod_menu/tree/main/package).
 Exit the game, then copy these files into the **Borderlands 4 installation root**:
 
 | File | Destination relative to the game root |
@@ -61,29 +61,18 @@ See [controls](docs/CONTROLS.md) for focus, capture and cancellation details.
 
 Ordinary SDK mods need no ECHO dependency or integration file. Start with the
 [author guide](docs/MOD_AUTHORS.md), then use the full [API reference](docs/API.md).
-The [example source](examples/echo_menu_example/__init__.py) demonstrates standard
+The [example source](https://github.com/Maxunit/bl4_echo_mod_menu/blob/main/examples/echo_menu_example/__init__.py) demonstrates standard
 options, real keybinds, translated metadata, a preset and mod-owned persistence.
-The optional built example is `package/examples/echo_menu_example.sdkmod`; copy it
+The optional built example is `examples/echo_menu_example.sdkmod` in the install package; copy it
 into `sdk_mods` only when wanted. It does not affect gameplay.
 
-## Building
+## Developer sources
 
-Build requirements: Python 3.12+ and Node.js 24. No pip/npm packages or game
-installation are required for the offline build and tests.
-
-```sh
-python tools/checks.py
-python tools/build.py
-python tools/check_reproducible.py
-```
-
-Install files are placed in `package/`. `dist/` contains the installer ZIP,
-separate developer-source ZIP and checksums. GitHub Actions builds and tests on
-Linux and Windows and uploads these files as artifacts. It does not publish a
-GitHub Release automatically.
-
-[Architecture](docs/ARCHITECTURE.md) explains thread/ownership boundaries;
-[build and tests](docs/BUILDING.md) documents what offline checks can establish.
+The repository and separate `_sources.zip` contain the developer sources,
+[build instructions](https://github.com/Maxunit/bl4_echo_mod_menu/blob/main/docs/BUILDING.md)
+and [architecture notes](https://github.com/Maxunit/bl4_echo_mod_menu/blob/main/docs/ARCHITECTURE.md).
+GitHub Actions builds and tests the packages on Windows and uploads the installer,
+sources and checksums as one artifact.
 
 ## Runtime data and diagnostics
 
@@ -94,11 +83,8 @@ variable `ECHO_MOD_MENU_DIAGNOSTICS=1` before startup to enable bounded diagnost
 files; errors can also produce reports. Runtime settings, logs and captures are
 not part of this repository.
 
-## Status
+## Version
 
-Version **1.0.0** is the initial publication-preparation package. Its functional
-baseline was tested in game for installation, autostart, settings/keybind
-persistence across restart, native menus, languages and controller operation.
-The cleaned publication bundle changes source layout and diagnostics and needs
-its own final in-game smoke test. Offline tests cannot execute Cohtml or native
-Win64 calls. See [changelog](CHANGELOG.md) and [third-party notices](THIRD_PARTY_NOTICES.md).
+Current version: **1.0.0**, provider API **1**. See the
+[changelog](CHANGELOG.md), [compatibility](COMPATIBILITY.md) and
+[third-party notices](THIRD_PARTY_NOTICES.md).

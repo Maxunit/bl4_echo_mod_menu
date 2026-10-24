@@ -64,10 +64,11 @@ def main():
     write_sdkmod(PACKAGE/'sdk_mods'/ARCHIVE_NAME)
     hashes=build_ui();write_native_tag_config();build_example()
     for name in ('README.md','CHANGELOG.md','COMPATIBILITY.md','THIRD_PARTY_NOTICES.md'):shutil.copyfile(ROOT/name,PACKAGE/name)
-    shutil.copytree(ROOT/'docs',PACKAGE/'docs')
+    (PACKAGE/'docs').mkdir()
+    for name in ('CONTROLS.md','MOD_AUTHORS.md','API.md'):
+        shutil.copyfile(ROOT/'docs'/name,PACKAGE/'docs'/name)
     manifest={'version':release,'provider_api':1,'distribution':'sdkmod','resources_sha256':hashes,
               'native_profile':'Steam 1.11 / PE 0xf38df04c / image size 0x26e12000',
-              'functional_baseline_game_tested':True,'publication_cleanup_game_tested':False,
               'runtime_sha256':{p.relative_to(SOURCE).as_posix():sha(p.read_bytes()) for p in runtime_files()}}
     (PACKAGE/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8',newline='\n')
     files=ordered_paths(p for p in PACKAGE.rglob('*') if p.is_file())
