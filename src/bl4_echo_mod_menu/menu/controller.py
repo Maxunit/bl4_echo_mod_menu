@@ -77,12 +77,12 @@ class Session:
                     with self.service.lock:
                         self.service.report['transactions'] = self.service.mailbox.snapshot()
                         self.service.save_report()
-                    self.sdk.logging.info(f'[ECHO Menu] APPLY v1.0.0 status={result["status"]} completed={len(result["completed"])} errors={len(result["errors"])} json={self.service.path}')
+                    self.sdk.logging.info(f'[ECHO Menu] APPLY v1.1.0 status={result["status"]} completed={len(result["completed"])} errors={len(result["errors"])} json={self.service.path}')
                 else:
                     self.publish(self.service.mailbox.snapshot()['catalog'])
         except Exception as error:
             self.service.error(error)
-            self.sdk.logging.error(f'[ECHO Menu] CALLBACK_FAILED v1.0.0 {type(error).__name__}: {error}')
+            self.sdk.logging.error(f'[ECHO Menu] CALLBACK_FAILED v1.1.0 {type(error).__name__}: {error}')
         finally:
             self.busy = False
         return None
@@ -93,15 +93,15 @@ def start(entry_file=None):
     import unrealsdk as sdk
     if _active is not None:
         if not _active.enabled:
-            sdk.logging.error('[ECHO Menu] START_REJECTED v1.0.0 cleanup pending; rerun stop')
+            sdk.logging.error('[ECHO Menu] START_REJECTED v1.1.0 cleanup pending; rerun stop')
             return False
         _active.same_thread()
-        sdk.logging.info('[ECHO Menu] ALREADY_ARMED v1.0.0')
+        sdk.logging.info('[ECHO Menu] ALREADY_ARMED v1.1.0')
         return True
     try:
         installation = require_tag_config(entry_file or __file__)
     except Exception as error:
-        sdk.logging.error(f'[ECHO Menu] START_FAILED v1.0.0 {type(error).__name__}: {error}')
+        sdk.logging.error(f'[ECHO Menu] START_FAILED v1.1.0 {type(error).__name__}: {error}')
         return False
     scene = importlib.import_module('bl4_echo_mod_menu.scene.lifecycle')
     had_scene = scene._active is not None
@@ -143,7 +143,7 @@ def start(entry_file=None):
             service.report['stage'] = 'armed'
             service.save_report()
         _active = session
-        sdk.logging.info(f'[ECHO Menu] ARMED v1.0.0 format={distribution_info()["format"]} mods={len(service.catalog["mods"])} menu_hooks=2 scene_hooks=2 writes=on_menu_close json={service.path}')
+        sdk.logging.info(f'[ECHO Menu] ARMED v1.1.0 format={distribution_info()["format"]} mods={len(service.catalog["mods"])} menu_hooks=2 scene_hooks=2 writes=on_menu_close json={service.path}')
         return True
     except Exception as error:
         if session is not None:
@@ -152,7 +152,7 @@ def start(entry_file=None):
             stop()
         elif not had_scene:
             scene.stop()
-        sdk.logging.error(f'[ECHO Menu] START_FAILED v1.0.0 {type(error).__name__}: {error}')
+        sdk.logging.error(f'[ECHO Menu] START_FAILED v1.1.0 {type(error).__name__}: {error}')
         return False
 
 
@@ -184,11 +184,11 @@ def stop():
         last = session.service.mailbox.last_result or {}
         apply_status = last.get('status', 'none')
         apply_errors = len(last.get('errors', []))
-        sdk.logging.info(f'[ECHO Menu] STOPPED v1.0.0 mods={len(session.service.catalog.get("mods", []))} batches={session.counts["batches"]} apply_status={apply_status} apply_errors={apply_errors} events={len(r["events"])} errors={len(r["errors"])} menu_hooks=0 json={session.service.path}')
+        sdk.logging.info(f'[ECHO Menu] STOPPED v1.1.0 mods={len(session.service.catalog.get("mods", []))} batches={session.counts["batches"]} apply_status={apply_status} apply_errors={apply_errors} events={len(r["events"])} errors={len(r["errors"])} menu_hooks=0 json={session.service.path}')
         _active = None
         return True
     except Exception as error:
-        sdk.logging.error(f'[ECHO Menu] STOP_FAILED v1.0.0 {type(error).__name__}: {error}')
+        sdk.logging.error(f'[ECHO Menu] STOP_FAILED v1.1.0 {type(error).__name__}: {error}')
         return False
 
 

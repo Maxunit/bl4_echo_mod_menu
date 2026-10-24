@@ -84,9 +84,13 @@ settings must not shadow existing visible SDK entries.
 Entries support `name`, `description`, `group`, `unit`, `true_text`, `false_text`,
 `enabled_when`, `visible_when` and `choice_labels`. Text is a plain string or a
 language map such as `{"en": "Distance", "de": "Abstand"}`. `default` can supply
-an original/fallback caption. ECHO currently offers DE/EN language selection;
-additional language maps can be supplied for future language support.
-Resolution is selected language, English, explicit default/original SDK text.
+an original/fallback caption. ECHO offers Auto plus 14 explicit language selections.
+Canonical map keys are `en`, `fr`, `it`, `de`, `es-es`, `ja`, `ko`, `pt-br`, `ru`,
+`zh-hans`, `th`, `zh-hant`, `pl` and `es-419`. Codes are case-insensitive and
+underscores are normalized to hyphens when the provider is read.
+Resolution is selected language, equivalent locale aliases, base language,
+English and explicit default/original SDK text. ECHO's own 1.1.0 test-build text
+is English/German; additional menu translations can be added independently.
 HTML markup is stripped; provider text is rendered with `textContent`.
 
 `choice_labels` maps actual stored choice strings to localized captions:

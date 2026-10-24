@@ -23,6 +23,7 @@ function echoControllerState(manager) {
     return state;
 }
 function echoControllerContext(state) {
+    if (state.languageMenu) return function () { echoLanguageClose(state,true); };
     if (state.keyCapture) return function () {
         state.keyCapture.close('native_cancel');
         if (document.activeElement && document.activeElement.echoTextOwner === state) document.activeElement.blur();
@@ -61,6 +62,7 @@ function echoControllerOptionButton(state, parent, mod, option, role, text, fn, 
 function echoControllerTargets(state, region) {
     if (state.busy || !state.active || !state.visible || state.closed) return [];
     return state.controller.targets.filter(function (target) {
+        if (state.languageMenu && target.region !== 'language-list') return false;
         if (region && target.region !== region || target.node.disabled ||
             !echoControllerContains(state.root, target.node)) return false;
         for (var at = target.node; at && at !== state.root; at = at.parentElement)
@@ -141,7 +143,7 @@ function echoControllerMarker(node, mode, row) {
 }
 function echoControllerPaint(state) {
     var nav = state.controller, current = nav.directional && state.visible && !state.closed && echoControllerCurrent(state);
-    var mode = nav.edit || state.keyCapture || state.nativeTextInput ? 'edit' : 'browse', marked = [];
+    var mode = nav.edit || state.languageMenu || state.keyCapture || state.nativeTextInput ? 'edit' : 'browse', marked = [];
     if (current) {
         marked.push(current.node);
         (state.optionRows || []).forEach(function (item) {
@@ -232,6 +234,13 @@ function echoControllerRefresh(state) {
 function echoControllerMove(state, direction) {
     var nav = state.controller;
     if (state.busy || state.keyCapture || state.nativeTextInput) return;
+    if (state.languageMenu) {
+        if (direction !== 'up' && direction !== 'down') return;
+        var languages = echoControllerTargets(state,'language-list'), focused = echoControllerCurrent(state);
+        var at = languages.indexOf(focused), step = direction === 'up' ? -1 : 1;
+        echoControllerFocus(state,languages[Math.max(0,Math.min(languages.length - 1,at + step))]);
+        return;
+    }
     if (nav.edit) {
         if (direction === 'left' || direction === 'right') nav.edit.editor.step(direction === 'left' ? -1 : 1);
         echoControllerPaint(state); return;
@@ -317,8 +326,9 @@ function echoControllerPointerAllowed(state) {
     return !(state.controller && state.controller.available && typeof InputMgr !== 'undefined' &&
         echoControllerState(InputMgr) === state && InputMgr.ShouldBlockCursorInput());
 }
-function echoControllerSuspend(state) {
+function echoControllerSuspend(state, preserveLanguage) {
     if (!state.controller) return;
+    if (!preserveLanguage) echoLanguageClose(state,false);
     echoControllerEndEdit(state, true);
     state.controller.directional = false; state.controller.confirmHeld = false; state.controller.confirmRoute = '';
     echoControllerPaint(state);
@@ -442,7 +452,7 @@ function echoControllerInstall(state) {
     prototype.ResetCursorInput = function () {
         var result = cursor.apply(this, arguments), current = echoControllerState(this);
         if (current && this.IsUsingCursor() && current.controller.directional) {
-            echoControllerSuspend(current); echoControllerLog(current, 'cursor', {});
+            echoControllerSuspend(current,true); echoControllerLog(current, 'cursor', {});
         }
         return result;
     };

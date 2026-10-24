@@ -30,8 +30,11 @@ def write_native_tag_config():
 def build_ui():
     translations=json.loads((ROOT/'ui/i18n.json').read_text(encoding='utf-8'))
     assert set(translations['en'])==set(translations['de'])
-    parts=[(ROOT/'ui'/n).read_text(encoding='utf-8') for n in ('transport.js','controller.js','editor.js','bootstrap.js')]
+    languages=json.loads((MODULE/'languages.json').read_text(encoding='utf-8'))
+    assert len(languages)==len({row['code'] for row in languages})==14
+    parts=[(ROOT/'ui'/n).read_text(encoding='utf-8') for n in ('transport.js','controller.js','language.js','editor.js','bootstrap.js')]
     extension='\n'.join(parts).replace('__ECHO_TRANSLATIONS__',json.dumps(translations,ensure_ascii=False,separators=(',',':')))
+    extension=extension.replace('__ECHO_LANGUAGES__',json.dumps(languages,ensure_ascii=False,separators=(',',':')))
     files=native_resources()
     files[MANAGER]=((ROOT/'native/widget_manager.base.js').read_text(encoding='utf-8')+"\n;(function () {\n'use strict';\n"+extension+'\n})();\n').encode()
     files[NAVIGATION]=((ROOT/'native/navigationbar.base.js').read_text(encoding='utf-8')+'\n;\n'+(ROOT/'ui/navigation.js').read_text(encoding='utf-8')).encode()

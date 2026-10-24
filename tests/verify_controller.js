@@ -19,7 +19,7 @@ function fixture(managerFile) {
  vm.runInContext('class GbxCustomElement extends DomNode { constructor(){super("widget-list-menu");} Init(){} connectedCallback(){} }\n'+source('fixtures/native_input/widget_class_patch2.js')+'\nthis.NativeWidgetBase=WidgetBase;',ctx);
  vm.runInContext(source('fixtures/native_input/menu_base.js')+'\n'+source('fixtures/native_input/oak_menu_base.js')+'\nthis.NativeOakMenuBase=Widget_OakMenuBase;',ctx);
  vm.runInContext(source('fixtures/native_input/list_menu.js')+'\nthis.NativeListMenu=Widget_ListMenu;',ctx);
- vm.runInContext(source('../ui/controller.js')+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',source('../ui/i18n.json')),ctx);
+ vm.runInContext(source('../ui/controller.js')+'\n'+source('../ui/language.js').replace('__ECHO_LANGUAGES__',source('../src/bl4_echo_mod_menu/languages.json'))+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',source('../ui/i18n.json')),ctx);
  ctx.InputMgr.Init();ctx.InputMgr.SimulateMouse=true;ctx.InputMgr.OnInputDeviceChanged(0,1,2,0);
  const actions=vm.runInContext('({up:INPUT_NAV_UP,down:INPUT_NAV_DOWN,left:INPUT_NAV_LEFT,right:INPUT_NAV_RIGHT,select:INPUT_NAV_SELECTED,pressed:InputActionType.PRESSED,released:InputActionType.RELEASED})',ctx);
  const trigger=ctx.engine.trigger;
@@ -446,5 +446,118 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(oldState.visible,false);assert(!oldState.controller.edit);
  assert.strictEqual(t.ctx.InputMgr.NavigationStack.filter(entry=>entry.WidgetId===replacement.id).length,1);
  cases++;
+ // Language popup owns a bounded focus context, cancel registration and a
+ // third temporary scroll pane. Browsing cannot change a preference or draft.
+ const lang=fixture(managerFile),names=JSON.parse(source('../src/bl4_echo_mod_menu/languages.json'));
+ const languages=()=>lang.state.root.querySelectorAll('.echo-language-option');
+ const open=()=>{lang.focus('language:select');lang.tap('select');assert(lang.state.languageMenu);};
+ lang.focus('value:mod1:offset');lang.tap('select');lang.tap('right');lang.tap('select');
+ const draftBefore=JSON.stringify(lang.state.drafts),modelBefore=JSON.stringify(lang.widget.DataModel);
+ open();assert.strictEqual(languages().length,14);
+ assert.deepStrictEqual(languages().map(n=>n.getAttribute('lang')),names.map(n=>n.code));
+ assert.deepStrictEqual(languages().map(n=>n.querySelector('.echo-language-name').textContent),names.map(n=>n.name));
+ assert.strictEqual(lang.state.controller.current,'language-option:en');
+ assert.strictEqual(lang.escapeStacks.get(lang.widget.WidgetIdent).length,1);
+ assert.strictEqual(lang.state.scrollPanes.length,3);
+ lang.tap('left');lang.tap('right');assert.strictEqual(lang.state.controller.current,'language-option:en');
+ lang.tap('down');assert.strictEqual(lang.state.controller.current,'language-option:fr');
+ assert.strictEqual(lang.state.preference,'en');assert.strictEqual(lang.pending.length,0);
+ lang.cancel();assert(!lang.state.languageMenu);assert.strictEqual(lang.rootBack,0);
+ assert.strictEqual(lang.state.controller.current,'language:select');
+ assert.strictEqual(lang.ctx.InputMgr.CurrElement,lang.target('language:select').node);
+ assert.strictEqual(lang.escapeStacks.get(lang.widget.WidgetIdent).length,0);
+ assert.strictEqual(lang.state.scrollPanes.length,2);assert(lang.env.observers.at(-1).disconnected);
+ assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+
+ open();lang.tap('down');lang.tap('select');assert(!lang.state.languageMenu);
+ let languageRequest=lang.pending.shift();assert(languageRequest.url.endsWith('/preferences'));
+ assert.strictEqual(languageRequest.body.language,'fr');assert.strictEqual(lang.pending.length,0);
+ lang.reply(languageRequest,{preferences:{language:'fr'}});
+ assert.strictEqual(lang.state.preference,'fr');assert.strictEqual(lang.ctx.echoLanguage(lang.state),'fr');
+ assert.strictEqual(lang.ctx.echoT(lang.state,'save'),'Save & Apply');
+ assert.strictEqual(lang.state.root.querySelector('.echo-language-current').textContent,'Français');
+ assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+
+ // The game's live culture is resolved independently from translated menu
+ // text availability. Auto keeps the Chinese/Spanish regional distinctions.
+ const aliases={'de-DE':'de','fr-FR':'fr','es_ES':'es-es','es-MX':'es-419','pt-BR':'pt-br',
+  'zh-CN':'zh-hans','zh-TW':'zh-hant','zh-Hant-HK':'zh-hant','ja-JP':'ja','ko-KR':'ko','th-TH':'th','unknown':'en'};
+ for(const [code,expected] of Object.entries(aliases))assert.strictEqual(lang.ctx.echoLocale(code),expected,code);
+ lang.ctx.LanguageSettings.CurrentLangCode='zh-TW';lang.focus('language:auto');lang.tap('select');
+ languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'auto');
+ lang.reply(languageRequest,{preferences:{language:'auto'}});
+ assert.strictEqual(lang.state.root.querySelector('.echo-language-current').textContent,'繁體中文');
+ open();assert.strictEqual(lang.state.controller.current,'language-option:zh-hant');lang.cancel();cases++;
+
+ // Model a small viewport: the last entries are revealed by D-pad scrolling,
+ // and both ends clamp without navigating into the surrounding menu.
+ lang.state.preference='en';lang.ctx.echoDraw(lang.state);open();
+ const languagePane=lang.state.languageMenu.pane;
+ languagePane.view._clientHeight=100;languagePane.view._scrollHeight=14*41;
+ languagePane.view._rect={left:0,top:0,width:280,height:100};
+ languagePane.track._clientHeight=100;
+ languages().forEach((n,index)=>{n.getBoundingClientRect=()=>({left:0,right:250,width:250,height:38,
+  top:index*41-(languagePane.view.scrollTop||0),bottom:index*41-(languagePane.view.scrollTop||0)+38});});
+ lang.ctx.echoSyncScroll(languagePane,true);
+ for(let i=0;i<15;i++)lang.tap('down');
+ assert.strictEqual(lang.state.controller.current,'language-option:es-419');assert(languagePane.view.scrollTop>0);
+ assert.strictEqual(lang.target('language-option:es-419').node.dataset.echoControllerFocus,'edit');
+ for(let i=0;i<15;i++)lang.tap('up');
+ assert.strictEqual(lang.state.controller.current,'language-option:en');assert.strictEqual(languagePane.view.scrollTop,0);
+ lang.cancel();cases++;
+
+ // Cursor handoff retains the open popup. A pointer selection applies once;
+ // a row detached by cancel cannot submit a stale preference later.
+ open();const staleLanguage=languages()[5];
+ lang.ctx.InputMgr.ResetCursorInput({clientX:260,clientY:160});
+ assert(lang.state.languageMenu);assert(!lang.state.controller.directional);
+ staleLanguage.click();languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'ja');
+ lang.reply(languageRequest,{preferences:{language:'ja'}});
+ assert.strictEqual(lang.pending.length,0);staleLanguage.click();assert.strictEqual(lang.pending.length,0);
+ assert.strictEqual(lang.state.root.querySelector('.echo-language-current').textContent,'日本語');cases++;
+
+ // The outside dismissal consumes both halves of a real pointer click.
+ open();lang.ctx.InputMgr.ResetCursorInput({clientX:261,clientY:161});
+ const underlying=lang.target('mod:library').node;
+ underlying.fire('mousedown',{button:0});underlying.fire('mouseup',{button:0});underlying.fire('click',{button:0});
+ assert(!lang.state.languageMenu);assert.strictEqual(lang.state.selected,'mod1');assert.strictEqual(lang.pending.length,0);cases++;
+
+ // Keyboard input in cursor mode uses the same preview/commit/cancel rules.
+ open();lang.ctx.InputMgr.ResetCursorInput({clientX:262,clientY:162});
+ let languageTrigger=lang.state.root.querySelector('.echo-language-trigger');
+ languageTrigger.fire('keydown',{key:'ArrowDown'});
+ assert.strictEqual(lang.state.controller.current,'language-option:ko');
+ languageTrigger.fire('keydown',{key:'Escape'});
+ assert(!lang.state.languageMenu);assert.strictEqual(lang.pending.length,0);
+ open();lang.ctx.InputMgr.ResetCursorInput({clientX:263,clientY:163});
+ languageTrigger=lang.state.root.querySelector('.echo-language-trigger');
+ languageTrigger.fire('keydown',{key:'ArrowUp'});languageTrigger.fire('keydown',{key:'Enter'});
+ languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'es-es');
+ lang.reply(languageRequest,{preferences:{language:'es-es'}});
+ const localized={name:'Original',name_i18n:{'es':'Compartido','es-mx':'Latino','en':'English','zh-tw':'繁體'}};
+ lang.state.preference='es-419';assert.strictEqual(lang.ctx.echoModText(lang.state,localized,'name'),'Latino');
+ lang.state.preference='zh-hant';assert.strictEqual(lang.ctx.echoModText(lang.state,localized,'name'),'繁體');
+ lang.state.preference='ja';assert.strictEqual(lang.ctx.echoModText(lang.state,localized,'name'),'English');
+ lang.ctx.echoDraw(lang.state);cases++;
+
+ // Native hide/deactivate, OS blur and redraw all relinquish the exact cancel
+ // owner. Reopening never resurrects a popup or its detached row callbacks.
+ lang.widget.SupportsHideFlags=true;
+ for(const boundary of ['hide','blur','redraw','deactivate']){
+  open();const oldLanguage=languages()[0];
+  if(boundary==='hide'){lang.widget.HideFlags=2;lang.ctx.echoOnEditorLifecycle(lang.widget,'Event_DataUpdated');
+   lang.widget.HideFlags=0;lang.ctx.echoOnEditorLifecycle(lang.widget,'Event_DataUpdated');}
+  if(boundary==='blur')lang.env.events.blur();
+  if(boundary==='redraw')lang.ctx.echoDraw(lang.state);
+  if(boundary==='deactivate'){lang.emitWidget('Deactivate');lang.emitWidget('Activate');}
+  while(lang.pending.length)lang.reply(lang.pending.shift(),{preferences:{language:'ja'}});
+  assert(!lang.state.languageMenu);assert.strictEqual(lang.state.scrollPanes.length,2);
+  assert.strictEqual(lang.escapeStacks.get(lang.widget.WidgetIdent).length,0);
+  oldLanguage.click();assert.strictEqual(lang.pending.length,0);
+ }
+ open();lang.cancel();lang.cancel();assert.strictEqual(lang.rootBack,1);
+ assert.strictEqual(JSON.stringify(lang.widget.DataModel),modelBefore);
+ assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+ console.log('PASS: language popup labels/regions, Auto aliases, D-pad/Confirm/Cancel, scrolling, cursor handoff, outside dismissal, stale nodes and lifecycle cleanup with '+managerFile+'.');
 }
 console.log('PASS: '+cases+' controller scenarios using both exported original InputManager variants; C++ escape dispatch and DOM geometry modeled, no BL4 runtime claim.');

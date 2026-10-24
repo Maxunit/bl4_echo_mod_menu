@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 — language dropdown test
+
+- Auto plus a scrollable language dropdown with 14 native language names.
+- D-pad focus stays within the open list; Confirm applies and Cancel dismisses.
+- Mouse, virtual gamepad cursor and keyboard input use the same selection.
+- Regional locale mapping, saved preference reload and mod-text fallback.
+- ECHO's own text remains English/German, with English fallback for other locales.
+
 ## 1.0.0
 
 - Native Mods tab with a blank animated scene and native material transition.

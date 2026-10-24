@@ -1,7 +1,7 @@
 # ECHO Mod Menu
 
 A native Mods tab for Borderlands 4, with automatic SDK mod discovery, staged
-settings, keyboard rebinding, English/German text and controller navigation.
+settings, keyboard rebinding, language selection and controller navigation.
 
 ## Installation
 
@@ -39,6 +39,21 @@ translations and additional settings through [API v1](docs/API.md).
   pending commands. Validation errors must be corrected before saving.
 - Changing the menu language preserves the current draft. Mod descriptions are
   translated only when their author supplies translations.
+
+### Language selection
+
+Choose **Auto** to follow the game's text language, or open the adjacent dropdown
+to select one of 14 languages by its native name. Spanish (Spain/Latin America)
+and Chinese (Simplified/Traditional) have separate selections.
+
+In this 1.1.0 test build, ECHO's own menu texts are available in English and German.
+The other selections use English for missing ECHO text, while mod-provided
+translations use the selected language. The dropdown tests language selection,
+character rendering and input handling; it does not change the game's language.
+
+Confirm opens the list. D-pad up/down navigates and scrolls within it; Confirm
+applies the selection and Cancel closes the list without changing the language.
+Mouse and virtual gamepad cursor selection are also supported.
 
 Keyboard capture supports individual supported keyboard keys. It does not add
 an on-screen keyboard or physical gamepad-button rebinding.
@@ -85,6 +100,6 @@ not part of this repository.
 
 ## Version
 
-Current version: **1.0.0**, provider API **1**. See the
+Current test version: **1.1.0**, provider API **1**. See the
 [changelog](CHANGELOG.md), [compatibility](COMPATIBILITY.md) and
 [third-party notices](THIRD_PARTY_NOTICES.md).

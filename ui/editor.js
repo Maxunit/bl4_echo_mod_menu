@@ -120,21 +120,14 @@ function echoMarkRows(state) {
         item.row.style.borderLeftColor = active ? '#c17e24' : 'transparent';
     });
 }
-function echoLanguage(state) {
-    var choice = state.preference || 'auto', detected = '';
-    if (choice !== 'auto') return choice === 'de' ? 'de' : 'en';
-    if (typeof LanguageSettings !== 'undefined') detected = LanguageSettings.CurrentLangCode || '';
-    if (!detected && document.documentElement) detected = document.documentElement.lang || '';
-    return String(detected).toLowerCase().indexOf('de') === 0 ? 'de' : 'en';
-}
 function echoT(state, key, values) {
-    var lang = echoLanguage(state), value = echoTranslations[lang][key] || echoTranslations.en[key] || key;
+    var lang = echoLanguage(state), value = (echoTranslations[lang] || {})[key] || echoTranslations.en[key] || key;
     Object.keys(values || {}).forEach(function (name) { value = value.replace('{' + name + '}', String(values[name])); });
     return value;
 }
 function echoModText(state, object, field) {
     var texts = object[field + '_i18n'] || {}, language = echoLanguage(state);
-    var candidates = [language, language.split('-')[0], 'en', 'default'];
+    var candidates = [language].concat(echoLanguageEntry(language).aliases, [language.split('-')[0], 'en', 'default']);
     for (var i = 0; i < candidates.length; ++i) {
         if (Object.prototype.hasOwnProperty.call(texts, candidates[i])) return texts[candidates[i]];
     }
@@ -471,7 +464,7 @@ function echoNumericEditor(state, parent, mod, option) {
             if (commit()) {
                 remember(); state.textEnterConfirmed = (state.textEnterConfirmed || 0) + 1;
                 if (state.textEnterConfirmed <= 16) record('editor_text_confirmed', {
-                    layout_revision:'1.0.0', dom_focus:document.activeElement === input,
+                    layout_revision:'1.1.0', dom_focus:document.activeElement === input,
                     native_focus:!!state.nativeTextInput && state.nativeTextInput.input === input,
                     key_shape:event.code || (event.keyCode === 13 || event.which === 13 ? 'code13' : 'Enter')});
             }
@@ -893,6 +886,7 @@ function echoSyncPanelVisibility(state, reason) {
 }
 function echoDraw(state) {
     if (!echoSyncPanelVisibility(state, 'redraw')) return;
+    echoLanguageClose(state, false);
     echoControllerEndEdit(state, true);
     echoCancelCapture(state);
     echoEditorDrag = null;
@@ -906,14 +900,14 @@ function echoDraw(state) {
     state.scrollPanes = state.scrollPanes || []; state.paneCache = state.paneCache || {}; state.optionRows = [];
     var root = state.content;
     if (!state.regions) { state.regions = {}; echoAtmosphere(root); }
-    var header = echoRegion(state, root, 'header', '', 'position:absolute;left:4.15%;right:4.15%;top:2.6rem;height:8rem;flex-direction:row;justify-content:space-between;border-bottom:1px solid #286078;', true);
+    var header = echoRegion(state, root, 'header', '', 'position:absolute;left:4.15%;right:4.15%;top:2.6rem;height:8rem;flex-direction:row;justify-content:space-between;border-bottom:1px solid #286078;z-index:70;overflow:visible;', true);
     var titles = echoNode(header, 'div');
     echoText(titles, echoT(state, 'eyebrow'), '', 'font-size:1.1rem;letter-spacing:0.2rem;color:#648c9a;');
     echoText(titles, echoT(state, 'mods'), '', 'font-size:4rem;font-style:italic;color:#38add4;margin-top:0.4rem;');
     var languages = echoNode(header, 'div', null, '', 'flex-direction:row;align-items:center;');
     echoText(languages, echoT(state, 'configuration'), 'echo-mode', 'width:auto;font-size:1.1rem;letter-spacing:0.1rem;padding:0.8rem 1rem;margin-right:2rem;border-left:2px solid #c17e24;color:#d7b071;background-color:rgba(28,31,26,0.5);');
     echoText(languages, echoT(state, 'language'), '', 'width:auto;font-size:1.2rem;margin-right:1rem;color:#7393a2;');
-    [['auto', echoT(state, 'auto')], ['de', 'DE'], ['en', 'EN']].forEach(function (pair) { echoControllerButton(state, languages, 'language:' + pair[0], 'language', pair[1], function () { echoPrefer(state, pair[0]); }, state.preference === pair[0], 'height:2.8rem;font-size:1.1rem;padding:0.4rem 0.7rem;'); });
+    echoLanguageRender(state, languages);
     echoFixedText(state, root, 'hint', echoT(state, 'hint'), '', 'position:absolute;left:4.15%;right:4.15%;top:11.8rem;width:auto;font-size:1.3rem;color:#90aab3;');
     echoFixedText(state, root, 'sessionHint', echoT(state, 'sessionHint'), 'echo-session-hint', 'position:absolute;left:4.15%;right:4.15%;top:14.3rem;width:auto;padding-left:1.2rem;border-left:0.3rem solid #267c99;font-size:1.2rem;color:#6196a8;');
     var body = echoRegion(state, root, 'body', 'echo-body', 'position:absolute;left:4.15%;right:4.15%;top:17.5rem;bottom:9.5rem;flex-direction:row;');
@@ -1067,6 +1061,9 @@ function echoMountEditor(widget) {
     var state = {widget:widget, root:root, content:root, catalog:{mods:[], errors:[]}, selected:null, category:'', filter:'all', preference:'auto', drafts:{}, saved:{}, invalid:{}, positions:{}, scrollPanes:[], optionRows:[], focusedOption:'', active:false, epoch:'', queueRevision:0, busy:false, closed:false, generation:0, lastResult:null, message:'', error:'', presented:widget.IsActivated === true, visible:false};
     widget.EchoMenuState = state;
     echoControllerMount(state);
+    root.addEventListener('mousedown', function (event) { echoLanguagePointer(state,event); }, true);
+    root.addEventListener('click', function (event) { echoLanguagePointer(state,event); }, true);
+    root.addEventListener('keydown', function (event) { echoLanguageKey(state,event); }, true);
     root.addEventListener('click', function (event) { event.stopPropagation(); });
     if (typeof window.addEventListener === 'function') {
         window.addEventListener('pagehide', function () {
@@ -1092,7 +1089,7 @@ function echoMountEditor(widget) {
             echoFlushScrollLayout(state);
         }, true);
     }
-    echoDraw(state); record('editor_mounted', {native_host:widget.WidgetIdent, native_model_written:false, layout_revision:'1.0.0'});
+    echoDraw(state); record('editor_mounted', {native_host:widget.WidgetIdent, native_model_written:false, layout_revision:'1.1.0'});
     return state;
 }
 function echoOnEditorLifecycle(widget, name) {
@@ -1119,7 +1116,7 @@ function echoOnEditorLifecycle(widget, name) {
 function echoProtoSelect() { /* The native placeholder model is retained; the ECHO editor owns its own selection. */ }
 function echoDescribeEditor(widget) {
     var state = widget && widget.EchoMenuState; if (!state) return null;
-    return {layout_revision:'1.0.0', catalog_count:state.catalog.mods.length, created_mod_rows:state.root.querySelectorAll('.echo-mod-card').length,
+    return {layout_revision:'1.1.0', catalog_count:state.catalog.mods.length, created_mod_rows:state.root.querySelectorAll('.echo-mod-card').length,
         controller:{available:!!state.controller.available, directional:!!state.controller.directional,
             capability_issue:state.controller.capabilityIssue,
             region:state.controller.region, target:state.controller.current, editing:!!state.controller.edit,
