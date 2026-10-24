@@ -70,6 +70,7 @@ function fixture(managerFile) {
  assert.strictEqual(state.controller.available,true);
  function phase(name,type){globalActions.Input_OnAction(actions[name],actions[type]);}
  function tap(name){phase(name,'pressed');phase(name,'released');}
+ function pointerConfirm(){for(const name of ['mousedown','mouseup','click'])doc.body.fire(name,{button:0});}
  function emitWidget(name){const handler=widgetEvents.get(widget.MakeEventName(name));assert(handler,'Missing native callback '+name);handler();}
  function target(id){return state.controller.targets.find(item=>item.id===id);}
  function focus(id){const node=target(id);assert(node,'Missing focus target '+id);ctx.InputMgr.OnNavigationTypeChanged(false);assert(ctx.echoControllerFocus(state,node));return node;}
@@ -77,7 +78,7 @@ function fixture(managerFile) {
   const current=ctx.InputMgr.CurrWidget,stack=current&&escapeStacks.get(current.WidgetIdent);
   if(stack&&stack.length)current.Event_TriggerCohEscapeInput(stack.at(-1));else rootBack++;
  }
- return {env,ctx,doc,Node,pending,nativeEvents,records,widget,state,mods,actions,phase,tap,target,focus,cancel,
+ return {env,ctx,doc,Node,pending,nativeEvents,records,widget,state,mods,actions,phase,tap,pointerConfirm,target,focus,cancel,
   escapeStacks,host,reply,modelBefore,emitWidget,get rootBack(){return rootBack;}};
 }
 let cases=0;
@@ -345,8 +346,9 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(p.state.controller.current,'category:mod1:bindings');padClick();
  assert.strictEqual(p.state.category,'bindings');assert.strictEqual(cursorClicks,0);
  assert.strictEqual(p.state.controller.confirmRoute,'click');
- // A delayed logical copy of the same Confirm cannot activate twice.
- p.tap('select');assert.strictEqual(p.state.category,'bindings');
+ // A direct logical callback for the same click cannot activate twice. A
+ // subsequent native Press/Release, however, belongs to a new gesture.
+ p.ctx.InputMgr.Event_Input_Select();assert.strictEqual(p.state.category,'bindings');
  p.tap('left');padClick();assert.strictEqual(p.state.category,'camera');
  p.tap('down');p.tap('down');assert.strictEqual(p.state.controller.current,pkey);
  padClick();assert(p.state.controller.edit);p.tap('right');
@@ -354,18 +356,35 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  padClick();assert(!p.state.controller.edit);assert.strictEqual(p.state.drafts[pkey].value,4);
  cases++;
 
- // The reverse delivery order must also be one-shot, including a redraw
- // caused by a toggle. Later clicks alone remain usable until a direction
- // starts a new route decision.
+ // Repeated Confirm stays usable on the SAME control after a redraw, even
+ // when the host switches between logical actions and primary mouse cycles.
+ // Bare synthetic copies do not establish a new physical press boundary.
  const q=fixture(managerFile);q.tap('down');q.focus('toggle:value:mod1:toggle');
  q.tap('select');assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
  q.target('toggle:value:mod1:toggle').node.fire('click',{button:0});
  assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
- q.tap('up');q.tap('down');
- q.target('toggle:value:mod1:toggle').node.fire('click',{button:0});assert(!q.state.drafts['value:mod1:toggle']);
- q.tap('select');assert(!q.state.drafts['value:mod1:toggle']);
+ q.pointerConfirm();assert(!q.state.drafts['value:mod1:toggle']);
+ q.tap('select');assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
  q.target('toggle:value:mod1:toggle').node.fire('click',{button:0});
  assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
+ q.tap('select');assert(!q.state.drafts['value:mod1:toggle']);
+ q.pointerConfirm();assert.strictEqual(q.state.drafts['value:mod1:toggle'].value,false);
+ cases++;
+
+ // A physical click and a logical action may overlap in either down-event
+ // order. Coalesce that gesture once, then rearm on the next actual press.
+ const mixed=fixture(managerFile);mixed.tap('down');mixed.focus('toggle:value:mod1:toggle');
+ for(const pointerFirst of [true,false]){
+  if(pointerFirst)mixed.doc.body.fire('mousedown',{button:0});
+  mixed.phase('select','pressed');
+  if(!pointerFirst)mixed.doc.body.fire('mousedown',{button:0});
+  mixed.phase('select','pressed'); // held/repeated native delivery
+  mixed.phase('select','released');
+  mixed.doc.body.fire('mouseup',{button:0});mixed.doc.body.fire('click',{button:0});
+  assert.strictEqual(!!mixed.state.drafts['value:mod1:toggle'],pointerFirst);
+ }
+ mixed.pointerConfirm();assert.strictEqual(mixed.state.drafts['value:mod1:toggle'].value,false);
+ mixed.tap('select');assert(!mixed.state.drafts['value:mod1:toggle']);
  cases++;
 
  // Minus, slider and Plus are separate targets, with independent Confirm.
@@ -486,6 +505,18 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(lang.state.root.querySelector('.echo-language-current').textContent,'Français');
  assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
 
+ // Selecting a language restores the trigger as semantic focus. It must
+ // immediately reopen without a direction/focus change, using either route.
+ lang.pointerConfirm();assert(lang.state.languageMenu);
+ lang.pointerConfirm();assert(!lang.state.languageMenu);
+ languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'fr');
+ lang.reply(languageRequest,{preferences:{language:'fr'}});
+ lang.tap('select');assert(lang.state.languageMenu);
+ lang.tap('select');assert(!lang.state.languageMenu);
+ languageRequest=lang.pending.shift();assert.strictEqual(languageRequest.body.language,'fr');
+ lang.reply(languageRequest,{preferences:{language:'fr'}});
+ assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+
  // The game's live culture is resolved independently from translated menu
  // text availability. Auto keeps the Chinese/Spanish regional distinctions.
  const aliases={'de-DE':'de','fr-FR':'fr','es_ES':'es-es','es-MX':'es-419','pt-BR':'pt-br',
@@ -551,6 +582,7 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  // Every shipped locale is selected through the actual dropdown and native
  // Confirm path. Translation and font changes must not rewrite an SDK draft.
  const dictionaries=require('./frontend_sources').translations;
+ const retainedHint=lang.state.regions.sessionHint;
  for(const locale of names){
   open();
   while(lang.state.controller.current!=='language-option:'+locale.code){
@@ -567,6 +599,14 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
   assert.strictEqual(lang.state.root.querySelector('.echo-session-hint').textContent,dictionaries[locale.code].sessionHint);
   assert(lang.state.root.style.fontFamily.includes('ECHO Menu Font LATIN'));
   if(['ja','ko','zh-hans','zh-hant','th'].includes(locale.code))assert(lang.state.root.style.fontFamily.includes('ECHO Menu Font '+locale.code.toUpperCase()));
+  assert.strictEqual(lang.state.regions.sessionHint,retainedHint);
+  // Root-only checks missed the in-game failure: text nodes themselves must
+  // receive the concrete family, including retained regions after a switch.
+  for(const node of lang.state.root.querySelectorAll('*')){
+   if(!node._text)continue;
+   const wanted=node.echoFontLocale?lang.ctx.echoLanguageFont(node.echoFontLocale):lang.ctx.echoMenuFont(locale.code);
+   assert.strictEqual(node.style.fontFamily,wanted,locale.code+' '+node.className+' '+node._text);
+  }
   assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);
   assert.strictEqual(lang.pending.length,0);assert.strictEqual(lang.state.epoch,'e1');
   assert.strictEqual(lang.doc.getElementById('echo-language-fonts'),fontStyle);

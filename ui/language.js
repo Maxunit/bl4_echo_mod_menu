@@ -42,6 +42,17 @@ function echoMenuFont(code) {
     var common = echoLanguageFontFaces.filter(function (row) { return row.code === 'latin'; })[0];
     return 'Industry-Medium' + (font ? ',"' + font.family + '"' : '') + (common ? ',"' + common.family + '"' : '');
 }
+function echoLanguageApplyFonts(state) {
+    // The selector's explicit family renders in BL4, while inherited families
+    // left ordinary menu text using Cohtml's ASCII-only last-resort font.
+    // Apply the concrete stack to retained regions as well as new controls.
+    var code = echoLanguage(state), family = echoMenuFont(code);
+    var nodes = [state.root].concat(Array.prototype.slice.call(state.root.querySelectorAll('*')));
+    nodes.forEach(function (node) {
+        node.style.fontFamily = node.echoFontLocale ? echoLanguageFont(node.echoFontLocale) : family;
+        node.style.lineHeight = ['ja','ko','zh-hans','zh-hant','th'].indexOf(node.echoFontLocale || code) >= 0 ? '1.4' : '1.25';
+    });
+}
 function echoLanguageExpanded(menu, expanded) {
     menu.anchor.setAttribute('aria-expanded',expanded ? 'true' : 'false');
     menu.arrow.style.borderTop = expanded ? '0 solid transparent' : '0.55rem solid #90b9c8';
@@ -93,12 +104,14 @@ function echoLanguageOpen(state, anchor, wrap, arrow) {
         button.className = 'echo-language-option'; button.setAttribute('role','option'); button.setAttribute('aria-selected',row.code === selected ? 'true' : 'false');
         echoNode(button, 'div', null, '', 'width:0.5rem;height:0.5rem;margin-right:0.9rem;background-color:' + (row.code === selected ? '#df9d4e' : 'transparent') + ';pointer-events:none;');
         var label = echoText(button, row.name, 'echo-language-name', 'flex:1;white-space:nowrap;font-size:1.5rem;font-style:normal;font-weight:400;font-family:' + echoLanguageFont(row.code) + ';');
+        label.echoFontLocale = row.code;
         label.setAttribute('lang',row.code); button.setAttribute('lang',row.code);
     });
     echoLanguageExpanded(menu,true);
     if (state.controller.available && typeof InputMgr !== 'undefined' && echoControllerState(InputMgr) === state)
         InputMgr.SetDirectionalInputCaptureActiveForWidget(state.widget,true);
     state.controller.current = 'language-option:' + selected; state.controller.region = 'language-list';
+    echoLanguageApplyFonts(state);
     echoControllerEscapeSync(state); echoControllerRefresh(state);
     // In cursor mode there is no directional focus yet. Still expose the
     // currently selected language in the scrolled viewport on first open.
@@ -120,6 +133,7 @@ function echoLanguageRender(state, parent) {
         {background:'#092a35',hover:'#17475a',border:'#578293',focus:'#9ae9ff',corner:false});
     button.className = 'echo-language-trigger'; button.setAttribute('aria-haspopup','listbox'); button.setAttribute('aria-expanded','false');
     var label = echoText(button, selected.name, 'echo-language-current', 'flex:1;font-size:1.4rem;white-space:nowrap;font-style:normal;font-weight:400;font-family:' + echoLanguageFont(selected.code) + ';');
+    label.echoFontLocale = selected.code;
     label.setAttribute('lang',selected.code);
     arrow = echoNode(button,'div',null,'echo-language-arrow','width:0;height:0;margin-left:1rem;border-left:0.45rem solid transparent;border-right:0.45rem solid transparent;border-top:0.55rem solid #90b9c8;pointer-events:none;');
 }

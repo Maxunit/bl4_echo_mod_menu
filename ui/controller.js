@@ -330,7 +330,7 @@ function echoControllerSuspend(state, preserveLanguage) {
     if (!state.controller) return;
     if (!preserveLanguage) echoLanguageClose(state,false);
     echoControllerEndEdit(state, true);
-    state.controller.directional = false; state.controller.confirmHeld = false; state.controller.confirmRoute = '';
+    state.controller.directional = false; state.controller.confirmHeld = false; state.controller.confirmRoute = ''; state.controller.confirmPointerDown = false;
     echoControllerPaint(state);
 }
 function echoControllerRestoreInput(state) {
@@ -343,7 +343,7 @@ function echoControllerRestoreInput(state) {
     // real Activate boundary, through the original native registration path.
     // This preserves the native priority stack and never edits the model.
     widget.UpdateInputRegistration();
-    state.controller.confirmHeld = false; state.controller.confirmRoute = '';
+    state.controller.confirmHeld = false; state.controller.confirmRoute = ''; state.controller.confirmPointerDown = false;
     echoControllerLog(state, 'input_registration', {input_active:!!widget.inputActive});
 }
 var echoControllerClickInstalled = false;
@@ -353,6 +353,7 @@ function echoControllerInstallClick() {
     ['mousedown','mouseup','click'].forEach(function (type) {
         document.addEventListener(type, function (event) {
             if (typeof InputMgr === 'undefined') return;
+            if (event.target && event.target.isConnected === false) return;
             var state = echoControllerState(InputMgr);
             if (!state || !state.controller.directional || InputMgr.IsUsingCursor() ||
                 typeof InputMgr.IsUsingGamepad !== 'function' || !InputMgr.IsUsingGamepad() ||
@@ -362,11 +363,18 @@ function echoControllerInstallClick() {
             // the semantic focus, not to the cursor's previous coordinates.
             if (event.preventDefault) event.preventDefault();
             if (event.stopImmediatePropagation) event.stopImmediatePropagation(); else event.stopPropagation();
-            if (type !== 'click' || state.busy || !state.active) return;
             var nav = state.controller;
-            // Choose the first delivered Confirm route in this directional
-            // input sequence. When both routes arrive, only one may activate.
-            // A subsequent direction, cursor handoff or activation resets it.
+            if (type === 'mousedown') {
+                // A new physical press starts another Confirm gesture. Keep
+                // an overlapping logical press's route until its click passes.
+                if (!nav.confirmPointerDown && !nav.confirmHeld) nav.confirmRoute = '';
+                nav.confirmPointerDown = true;
+                return;
+            }
+            if (type === 'mouseup') { nav.confirmPointerDown = false; return; }
+            if (state.busy || !state.active) return;
+            // A logical Confirm already handled this gesture. Its trailing
+            // synthetic click must not toggle or enter an editor a second time.
             if (nav.confirmRoute === 'action') return;
             var target = echoControllerCurrent(state); if (!target) return;
             nav.confirmRoute = 'click';
@@ -436,11 +444,13 @@ function echoControllerInstall(state) {
         var current = echoControllerState(this);
         if (current && type == InputActionType.PRESSED &&
             [INPUT_NAV_UP,INPUT_NAV_RIGHT,INPUT_NAV_DOWN,INPUT_NAV_LEFT].indexOf(name) >= 0) {
-            current.controller.confirmRoute = ''; current.controller.confirmHeld = false;
+            if (!current.controller.confirmHeld) current.controller.confirmRoute = '';
         }
         if (current && name === INPUT_NAV_SELECTED) {
-            if (type == InputActionType.PRESSED && (current.controller.confirmHeld || current.controller.confirmRoute === 'click')) return;
+            if (type == InputActionType.PRESSED && current.controller.confirmHeld) return;
             if (type == InputActionType.PRESSED) {
+                // Press after Release is a new gesture, including on the same
+                // control after a redraw. Never wait for a direction to rearm.
                 current.controller.confirmHeld = true; current.controller.confirmRoute = 'action';
                 echoControllerLog(current, 'confirm_action', {target:current.controller.current});
             }
@@ -461,7 +471,7 @@ function echoControllerMount(state) {
     if (state.controller) { echoControllerInstall(state); return; }
     var widget = state.widget, originalEscape = widget.Event_TriggerCohEscapeInput;
     state.controller = {available:false, capabilityIssue:'', escapeCapable:typeof originalEscape === 'function', escapeRegistered:false,
-        directional:false, current:'', region:'mods', targets:[], memory:{}, categories:{}, edit:null, confirmHeld:false, confirmRoute:'', records:0, counts:{}};
+        directional:false, current:'', region:'mods', targets:[], memory:{}, categories:{}, edit:null, confirmHeld:false, confirmRoute:'', confirmPointerDown:false, records:0, counts:{}};
     if (typeof originalEscape === 'function') widget.Event_TriggerCohEscapeInput = function (ident) {
         var cancel = echoControllerContext(state);
         if (ident === echoControllerEscape && state.visible && !state.closed && state.widget.IsActivated && cancel) {

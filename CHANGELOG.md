@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.1 — font assignment and repeated Confirm
+
+- Apply concrete font stacks directly to menu text, controls and retained
+  regions instead of relying on inherited font families in the native view.
+- Keep each language name's regional font when switching the menu language.
+- Rearm controller Confirm on each new press or primary mouse-button cycle,
+  including repeated activation of the same control after a redraw.
+- Continue suppressing held input and trailing synthetic clicks so a single
+  gesture cannot toggle an option or enter an editor twice.
+- Check font assignment throughout all 14 locales and repeated mixed Confirm
+  routes, including reopening the language selector without moving focus.
+
 ## 1.2.0 — complete menu translations
 
 - Translate all 88 ECHO menu strings into the 14 selectable text languages.

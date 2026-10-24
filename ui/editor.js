@@ -154,7 +154,7 @@ function echoNode(parent, tag, text, cls, style) {
     var node = document.createElement(tag);
     if (cls) node.className = cls;
     if (text !== undefined && text !== null) node.textContent = String(text);
-    node.style.cssText = 'display:flex;flex-direction:column;flex-shrink:0;box-sizing:border-box;min-width:0;min-height:0;position:relative;color:#bfd4dc;font-family:inherit;font-style:normal;font-weight:400;font-size:1.7rem;line-height:inherit;pointer-events:auto;' + (style || '');
+    node.style.cssText = 'display:flex;flex-direction:column;flex-shrink:0;box-sizing:border-box;min-width:0;min-height:0;position:relative;color:#bfd4dc;font-family:Industry-Medium,sans-serif;font-style:normal;font-weight:400;font-size:1.7rem;line-height:1.25;pointer-events:auto;' + (style || '');
     parent.appendChild(node);
     return node;
 }
@@ -464,7 +464,7 @@ function echoNumericEditor(state, parent, mod, option) {
             if (commit()) {
                 remember(); state.textEnterConfirmed = (state.textEnterConfirmed || 0) + 1;
                 if (state.textEnterConfirmed <= 16) record('editor_text_confirmed', {
-                    layout_revision:'1.2.0', dom_focus:document.activeElement === input,
+                    layout_revision:'1.2.1', dom_focus:document.activeElement === input,
                     native_focus:!!state.nativeTextInput && state.nativeTextInput.input === input,
                     key_shape:event.code || (event.keyCode === 13 || event.which === 13 ? 'code13' : 'Enter')});
             }
@@ -887,8 +887,6 @@ function echoSyncPanelVisibility(state, reason) {
 function echoDraw(state) {
     if (!echoSyncPanelVisibility(state, 'redraw')) return;
     echoLanguageInstallFonts();
-    state.root.style.fontFamily = echoMenuFont(echoLanguage(state));
-    state.root.style.lineHeight = ['ja','ko','zh-hans','zh-hant','th'].indexOf(echoLanguage(state)) >= 0 ? '1.4' : '1.25';
     echoLanguageClose(state, false);
     echoControllerEndEdit(state, true);
     echoCancelCapture(state);
@@ -1053,6 +1051,7 @@ function echoDraw(state) {
     state.saveButton = echoControllerButton(state, actions, 'action:save', 'actions', echoT(state, 'save'), function () { echoSave(state, false); }, true, 'color:#092130;', false, {background:'#79c9db', image:'linear-gradient(180deg,#9de7f6,#6bbacf)', hover:'#9de7f6', border:'#a4e8f4', focus:'#c9f7ff', cornerColor:'#2d6579'});
     echoFooter(state);
     echoMarkRows(state);
+    echoLanguageApplyFonts(state);
     echoControllerRefresh(state);
 }
 function echoMountEditor(widget) {
@@ -1092,7 +1091,7 @@ function echoMountEditor(widget) {
             echoFlushScrollLayout(state);
         }, true);
     }
-    echoDraw(state); record('editor_mounted', {native_host:widget.WidgetIdent, native_model_written:false, layout_revision:'1.2.0'});
+    echoDraw(state); record('editor_mounted', {native_host:widget.WidgetIdent, native_model_written:false, layout_revision:'1.2.1'});
     return state;
 }
 function echoOnEditorLifecycle(widget, name) {
@@ -1119,7 +1118,7 @@ function echoOnEditorLifecycle(widget, name) {
 function echoProtoSelect() { /* The native placeholder model is retained; the ECHO editor owns its own selection. */ }
 function echoDescribeEditor(widget) {
     var state = widget && widget.EchoMenuState; if (!state) return null;
-    return {layout_revision:'1.2.0', catalog_count:state.catalog.mods.length, created_mod_rows:state.root.querySelectorAll('.echo-mod-card').length,
+    return {layout_revision:'1.2.1', catalog_count:state.catalog.mods.length, created_mod_rows:state.root.querySelectorAll('.echo-mod-card').length,
         controller:{available:!!state.controller.available, directional:!!state.controller.directional,
             capability_issue:state.controller.capabilityIssue,
             region:state.controller.region, target:state.controller.current, editing:!!state.controller.edit,
