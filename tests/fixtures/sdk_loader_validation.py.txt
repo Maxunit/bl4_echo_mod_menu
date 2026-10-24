@@ -1,0 +1,56 @@
+# Extracted from the official BL4 Oak2 Mod Manager.
+# Source: https://github.com/bl-sdk/oak2-mod-manager/blob/master/src/__main__.py
+# Git blob: 8baef6f13e234b80b69574df7d2c5241cd23a973
+# LGPL-3.0; see SDK-LICENSE-LGPL-3.txt and SDK-LICENSE-GPL-3.txt.
+# Function body is unchanged. Import-time game startup is intentionally excluded.
+
+def validate_file_in_mods_folder(file: Path) -> bool:
+    """
+    Checks if a folder inside the mods folder is actually a mod we should try import.
+
+    Sets up sys.path as required.
+
+    Args:
+        file: The file to analyse.
+    Returns:
+        True if the file is a valid .sdkmod to try import.
+    """
+    match file.suffix.lower():
+        case ".sdkmod":
+            # Handled below
+            pass
+
+        case _:
+            return False
+
+    valid_zip = False
+    name_suggestion: str | None = None
+    with contextlib.suppress(zipfile.BadZipFile, StopIteration, OSError):
+        zip_iter = zipfile.Path(file).iterdir()
+        zip_entry = next(zip_iter)
+        valid_zip = zip_entry.name == file.stem and next(zip_iter, None) is None
+
+        if (
+            not valid_zip
+            and (match := RE_NUMBERED_DUPLICATE.match(file.name))
+            and (base_name := match.group(1)) == zip_entry.name
+        ):
+            name_suggestion = base_name + ".sdkmod"
+
+    if not valid_zip:
+        error_msg = f"'{file.name}' does not appear to be valid, and has been ignored."
+        if name_suggestion is not None:
+            error_msg += f" Is it supposed to be called '{name_suggestion}'?"
+        logging.error(error_msg)
+        logging.dev_warning(
+            "'.sdkmod' files must be a zip, and may only contain a single root folder, which must"
+            " be named the same as the zip (excluding suffix).",
+        )
+        return False
+
+    str_path = str(file)
+    if str_path not in sys.path:
+        sys.path.append(str_path)
+
+    return True
+

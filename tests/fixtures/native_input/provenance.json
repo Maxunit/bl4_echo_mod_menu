@@ -1,0 +1,29 @@
+{
+  "description": "Original game UI input and menu fixtures. Only used by offline tests.",
+  "variants": [
+    "base input manager",
+    "patch 2 input manager"
+  ],
+  "sha256": {
+    "input_manager_base.js": "506c12214afa3cea09f2f27b5f01c2fdbb516dfeee9dce0a055ec11baab982e8",
+    "input_manager_patch2.js": "d9429c1930e9e5d3598aae030d01007ce1f872138a4870de006a529b445ecdab",
+    "input_behaviors.js": "f79305e2ca70b3fa71bb2c8ee5331c6c77f7c1f7185d93a7e39eace17c8ad6e3",
+    "dropdown_patch2.js": "b813322e5de52afeeaacfe1fbf33e394440fd603346fc8da99f13ba21d129f5b",
+    "widget_class_patch2.js": "8ca2dbe68cf0183a61a9d730bbfe9c99a657c66d25c6027123967ae69df3b592",
+    "menu_base.js": "e22cdb172c098ab9ae0df4e425b1d274febcee08e3641fc07478a148a87b7cd2",
+    "oak_menu_base.js": "d7efb194edcd127eee4ea5e2eeeaf1044066bf952cac80849ff4ad82cf87ae81",
+    "list_menu.js": "c0edac314bc83cc74eea46150a44521642ae852aff053e89ea7ff51a47d8fa06"
+  },
+  "loaded_script_precedence_verified": false,
+  "original_sha256": {
+    "input_manager_base.js": "40b5bb42b4067ffc358a7c3e40a9075de74c40ca123289c04a0d4c88cdb90ed1",
+    "input_manager_patch2.js": "99691687567ac2c43a946f41fc9854a6df895cf608bb3bcf888c4bbfac413065",
+    "input_behaviors.js": "75024f1b71117ea77fa1137738084d257a9047a0aa62705ac1081b5bad0a728f",
+    "dropdown_patch2.js": "cbcb19addc0a583ff38822f67c476520c83d1d1882ec2124ec64012f5e3be620",
+    "widget_class_patch2.js": "d18c2f0e4ece0674321c5af964ca6553a15ba003060fac15bcb6a9489c20add9",
+    "menu_base.js": "6dc005565feb3a1544fc7fdc571bf6c4195e912f78225efb26664f83b4e9c781",
+    "oak_menu_base.js": "2e1884ed01e689dca5f082c8bc6a32b1caa202c2dc44560c15240a4803b0576f",
+    "list_menu.js": "3e6c7326ab22ab935e140b55e8556c0e6289092ed46c9e02e8af4de9f4271d09"
+  },
+  "normalization": "Line endings normalized to LF; executable JavaScript unchanged."
+}

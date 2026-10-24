@@ -1,0 +1,21 @@
+{
+  "source": "Independently decoded shipped native PAK; ui_v87 NcsParser tool",
+  "native_resources_sha256": {
+    "Engine/Content/_NCS/Nexus-Data-uistate0.ncs": "bb9f5bda36a413179ab9c5bd5c6de3d48131b23681745e384ddbc5f6b9be1850",
+    "Engine/Content/_NCS/Nexus-Data-uiwidget0.ncs": "6da4f135cc3f20cb7818e6575c40da048d18c932de0ba4bc845421c09ea1ed35"
+  },
+  "state_ident": "MENU_BL4_MODS_EMPTY_V39",
+  "state_parent": "uistate'STATUS_MENU'",
+  "state_identity_tag": "UI.State.MENU_BL4_MODS_EMPTY_V39",
+  "state_applied_tags": [
+    "UI.Tag.BL4_MODS_EMPTY_V39"
+  ],
+  "widget_required_tags": [
+    "UI.Tag.STATUS_MENU",
+    "UI.Tag.BL4_MODS_EMPTY_V39"
+  ],
+  "nav_alt_required_tags": [
+    "UI.Tag.BL4_MODS_EMPTY_V39"
+  ],
+  "primary_state": "MENU_BL4_MODS_EMPTY_V39"
+}

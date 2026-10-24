@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.pak binary
+*.sdkmod binary
+*.ncs binary
+*.zip binary
+*.png binary
+native/*.base.js -whitespace
+tests/fixtures/** -whitespace

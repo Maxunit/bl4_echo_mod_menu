@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+/build/
+/dist/
+*.log
+.env
+.env.*
+/sdk_mods/
+/reports/
+/settings/
+.DS_Store
+Thumbs.db
