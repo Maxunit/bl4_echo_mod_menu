@@ -2,6 +2,8 @@
 
 ## 1.2.4 — restore the complete preset row
 
+- Expand the API guide with a level-selection table and complete Level 2/3
+  examples; include their standalone source folders and optional SDKMODs.
 - Treat all preset buttons, their shared label and container padding as one
   scroll item, including when the buttons wrap onto multiple lines.
 - Returning from the last option to any remembered preset reveals the complete

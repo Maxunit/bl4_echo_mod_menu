@@ -48,11 +48,27 @@ def build_ui():
     (staging/'widget_manager.js').write_bytes(files[MANAGER]);(staging/'navigationbar.js').write_bytes(files[NAVIGATION])
     return {n:sha(v) for n,v in files.items()}
 
-def build_example():
-    source=ROOT/'examples/echo_menu_example'
-    target=PACKAGE/'examples/echo_menu_example.sdkmod';target.parent.mkdir(parents=True,exist_ok=True)
-    with zipfile.ZipFile(target,'w') as archive:
-        for p in ordered_paths(source.rglob('*.py')):add_bytes(archive,'echo_menu_example/'+p.relative_to(source).as_posix(),p.read_bytes())
+def build_examples(destination: Path | None = None) -> list[Path]:
+    """Package each standalone example with a matching root and readable source."""
+    destination = PACKAGE / 'examples' if destination is None else destination
+    destination.mkdir(parents=True, exist_ok=True)
+    archives: list[Path] = []
+    for source in ordered_paths((ROOT / 'examples').iterdir()):
+        if not source.is_dir() or not (source / '__init__.py').is_file():
+            continue
+        target = destination / (source.name + '.sdkmod')
+        with zipfile.ZipFile(target, 'w') as archive:
+            for path in ordered_paths(source.rglob('*.py')):
+                if '__pycache__' in path.parts:
+                    continue
+                relative = Path(source.name) / path.relative_to(source)
+                contents = path.read_bytes()
+                add_bytes(archive, relative.as_posix(), contents)
+                readable = destination / relative
+                readable.parent.mkdir(parents=True, exist_ok=True)
+                readable.write_bytes(contents)
+        archives.append(target)
+    return archives
 
 def source_files():
     for folder in ('src','ui','native','tools','tests','docs','examples','.github','licenses'):
@@ -69,7 +85,7 @@ def main():
     if PACKAGE.exists():shutil.rmtree(PACKAGE)
     PACKAGE.mkdir();DIST.mkdir(exist_ok=True)
     write_sdkmod(PACKAGE/'sdk_mods'/ARCHIVE_NAME)
-    hashes=build_ui();write_native_tag_config();build_example()
+    hashes=build_ui();write_native_tag_config();build_examples()
     for name in ('README.md','CHANGELOG.md','COMPATIBILITY.md','THIRD_PARTY_NOTICES.md'):shutil.copyfile(ROOT/name,PACKAGE/name)
     (PACKAGE/'docs').mkdir()
     for name in ('CONTROLS.md','MOD_AUTHORS.md','API.md'):
@@ -91,6 +107,6 @@ def main():
         with zipfile.ZipFile(target) as archive:assert archive.testzip() is None
         print(target.name,target.stat().st_size,sha(target.read_bytes()))
     (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p.read_bytes())+'  '+p.name+'\n' for p in (installer,sources)),encoding='utf-8',newline='\n')
-    print('Build complete: one SDKMOD, native PAK, required tag INI, optional example, English docs and reproducible sources.')
+    print('Build complete: one SDKMOD, native PAK, required tag INI, optional examples, English docs and reproducible sources.')
 
 if __name__=='__main__':main()

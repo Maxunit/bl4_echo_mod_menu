@@ -22,7 +22,7 @@ The native C++ boundary, physical input delivery, DOM geometry and Cohtml render
 are modeled. Offline tests do not certify native execution or in-game pixels.
 
 `tools/build.py` creates one SDKMOD with a matching package root, a checked PAK,
-external tag INI, optional example SDKMOD, English docs and checksums. Outputs:
+external tag INI, optional example SDKMODs, English docs and checksums. Outputs:
 
 - `package/`: ready-to-install layout tracked for direct access.
 - `dist/ECHO_Mod_Menu_<version>.zip`: complete install package.
@@ -32,6 +32,12 @@ external tag INI, optional example SDKMOD, English docs and checksums. Outputs:
 Build instructions and architecture notes are included in the developer archive.
 The install package includes the user guide, controls, compatibility, changelog,
 third-party notices and mod-author/API documentation.
+
+Each standalone folder under `examples/` is built into a matching SDKMOD and
+also included as readable source in the install package. The API's complete
+Level 2/3 code blocks match those source files. Tests import both forms using
+the original SDK factory, options and persistence fixtures, while modeling the
+game boundary.
 
 ZIP timestamps, member order and permissions are fixed. The reproducibility
 check extracts the source archive into a clean directory, runs the build and

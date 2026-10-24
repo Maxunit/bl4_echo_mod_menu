@@ -79,10 +79,16 @@ See [controls](docs/CONTROLS.md) for focus, capture and cancellation details.
 
 Ordinary SDK mods need no ECHO dependency or integration file. Start with the
 [author guide](docs/MOD_AUTHORS.md), then use the full [API reference](docs/API.md).
-The [example source](https://github.com/Maxunit/bl4_echo_mod_menu/blob/main/examples/echo_menu_example/__init__.py) demonstrates standard
-options, real keybinds, translated metadata, a preset and mod-owned persistence.
-The optional built example is `examples/echo_menu_example.sdkmod` in the install package; copy it
-into `sdk_mods` only when wanted. It does not affect gameplay.
+
+| Complete example | Demonstrates |
+| --- | --- |
+| [Level 2](examples/echo_menu_level2/__init__.py) | SDK-owned options, categories, presets, conditions and translated names/descriptions. |
+| [Level 3](examples/echo_menu_level3/__init__.py) | Custom JSON loading/saving, validated callbacks, a queued Reset action and ordering. |
+| [Combined](examples/echo_menu_example/__init__.py) | SDK options, a registered keybind and separate mod-owned persistence. |
+
+The install package includes each source folder and a matching optional SDKMOD
+under `examples/`. Copy only the example SDKMODs you want into `sdk_mods`.
+These examples store settings and do not affect gameplay.
 
 ## Developer sources
 
@@ -103,6 +109,6 @@ not part of this repository.
 
 ## Version
 
-Current test version: **1.2.0**, provider API **1**. See the
+Current version: **1.2.4**, provider API **1**. See the
 [changelog](CHANGELOG.md), [compatibility](COMPATIBILITY.md) and
 [third-party notices](THIRD_PARTY_NOTICES.md).
