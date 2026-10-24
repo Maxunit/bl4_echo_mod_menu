@@ -25,7 +25,9 @@ from bl4_echo_mod_menu.paths import locate_game_root, settings_directory, report
 
 class Tests(unittest.TestCase):
     def game(self, directory):
-        root = Path(directory)/'Borderlands 4'
+        # Windows may provide an 8.3 temporary-directory alias. Match the
+        # canonical paths returned by the production installation resolver.
+        root = Path(directory).resolve()/'Borderlands 4'
         (root/'sdk_mods').mkdir(parents=True)
         (root/'OakGame/Content/Paks').mkdir(parents=True)
         config=root/'OakGame/Config/Tags/BL4EchoModMenu.ini'

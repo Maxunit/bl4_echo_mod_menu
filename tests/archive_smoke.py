@@ -16,7 +16,7 @@ from types import ModuleType, SimpleNamespace
 
 
 def main():
-    search, game, expected_format = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
+    search, game, expected_format = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve(), sys.argv[3]
     settings = game / 'sdk_mods/settings'
     starting_thread = get_ident()
     logs, writes, created = [], [], []
