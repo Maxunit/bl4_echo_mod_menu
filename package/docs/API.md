@@ -94,6 +94,11 @@ into all 14 supported languages. Provider translations remain the author's own
 data and do not change stored values, setting identifiers or native game language.
 HTML markup is stripped; provider text is rendered with `textContent`.
 
+Bundled font subsets cover ECHO's shipped text and language names. Provider
+strings that introduce additional Asian characters may need extended font
+coverage; supplying a language map does not automatically add glyphs or register
+fonts. The source build checks ECHO's own glyph coverage against its locale files.
+
 `choice_labels` maps actual stored choice strings to localized captions:
 `{"Soft": {"en": "Soft", "de": "Weich"}}`. Stored values stay unchanged.
 There is no execution of provider-supplied HTML, JavaScript or expressions.
