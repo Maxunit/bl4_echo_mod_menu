@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.3 — complete D-pad scroll bounds
+
+- Reveal the whole labeled option row when it fits in the viewport, including
+  rows with separate Minus / Slider / Plus controls.
+- Reach the actual scroll start/end at the first/last selectable item, including
+  list padding, card margins and section spacing.
+- Apply the same endpoint behavior to the language list. Keep the focused
+  control visible when a long row or introduction cannot fit at an endpoint.
+- Check seven-card list bounds, complete option rows, tall content and retained
+  scrollbar identity with both original InputManager variants.
+
 ## 1.2.2 — Confirm without release prerequisites
 
 - Leave the original InputManager action dispatcher unchanged and handle each

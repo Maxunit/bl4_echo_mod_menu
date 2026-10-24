@@ -69,10 +69,10 @@ def on_activate(obj, args, ret=None, func=None):
         remove_bootstrap(sdk)
         if not controller.start(__file__):
             raise RuntimeError('Guarded menu startup failed; see preceding report')
-        sdk.logging.info('[ECHO Menu] STARTED v1.2.2 trigger=inventory_activate')
+        sdk.logging.info('[ECHO Menu] STARTED v1.2.3 trigger=inventory_activate')
     except Exception as error:
         _failed = True
-        sdk.logging.error('[ECHO Menu] FAILED v1.2.2 ' + type(error).__name__ + ': ' + str(error)[:350])
+        sdk.logging.error('[ECHO Menu] FAILED v1.2.3 ' + type(error).__name__ + ': ' + str(error)[:350])
     finally:
         _busy = False
     return None
@@ -95,7 +95,7 @@ def enable():
         if not sdk.hooks.has_hook(BOOT_PATH, sdk.hooks.Type.POST, HOOK_ID):
             raise RuntimeError('Autostart hook absent after registration')
         _enabled = True
-        sdk.logging.info('[ECHO Menu] WAITING v1.2.2 trigger=inventory_activate format=' + distribution_info()['format'])
+        sdk.logging.info('[ECHO Menu] WAITING v1.2.3 trigger=inventory_activate format=' + distribution_info()['format'])
         return True
     except Exception as error:
         _enabled = False
@@ -104,7 +104,7 @@ def enable():
             remove_bootstrap(sdk)
         except Exception as cleanup:
             sdk.logging.error('[ECHO Menu] CLEANUP_PENDING ' + str(cleanup)[:200])
-        sdk.logging.error('[ECHO Menu] ARM_FAILED v1.2.2 ' + str(error)[:350])
+        sdk.logging.error('[ECHO Menu] ARM_FAILED v1.2.3 ' + str(error)[:350])
         return False
 
 

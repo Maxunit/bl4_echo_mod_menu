@@ -16,7 +16,10 @@ DualSense mappings, Confirm is Cross and Cancel is Circle.
 The cyan frame marks navigation focus. Orange marks active editing. Numeric
 rows have separate Minus, Slider and Plus targets; Confirm on the slider begins
 the mode where left/right adjusts rather than moving to another control.
-The focused option row is also marked and scrolled into view.
+The focused option row is also marked and scrolled into view. At the first or
+last selectable item, scrolling includes the list's outer spacing so the thumb
+can reach the actual endpoint. If a row or introduction is taller than the
+viewport, keeping the focused control visible takes priority.
 
 Focus memories are scoped to mod/category. Hidden and disabled controls are
 skipped. Moving a real cursor returns to cursor operation and cancels an

@@ -83,6 +83,18 @@ function fixture(managerFile) {
  return {env,ctx,doc,Node,pending,nativeEvents,records,widget,state,mods,actions,nativeAction,phase,tap,pointerConfirm,clickConfirm,target,focus,cancel,
   escapeStacks,host,reply,modelBefore,emitWidget,get rootBack(){return rootBack;}};
 }
+function scrollGeometry(h,pane,total,height,top=20){
+ pane.pendingTop=null;pane.awaitLayout=false;pane.view.scrollTop=0;
+ pane.view._clientHeight=height;pane.view._scrollHeight=total;
+ pane.view._rect={left:0,top,width:400,height};pane.track._clientHeight=200;
+ h.ctx.echoSyncScroll(pane,true);
+}
+function scrollingBox(node,pane,offset,height){
+ node.getBoundingClientRect=()=>{
+  const top=pane.view.getBoundingClientRect().top+offset-(pane.view.scrollTop||0);
+  return {left:0,right:380,width:380,top,bottom:top+height,height};
+ };
+}
 let cases=0;
 for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  const f=fixture(managerFile),{ctx,state,widget,tap,focus,target,phase,nativeEvents,pending}=f;
@@ -212,6 +224,56 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(JSON.stringify(widget.DataModel),f.modelBefore);
  cases++;
  console.log('PASS: native '+managerFile+' action dispatch, focus graph, slider/choice edit, contextual native Escape, text/capture cancellation, pointer handoff, one-shot Confirm, foreign widgets and unchanged models.');
+
+ // Fully visible end cards can still leave list padding/margins offscreen.
+ // D-pad reaches actual endpoints; an intermediate card scrolls minimally.
+ const ends=fixture(managerFile);
+ for(let i=0;i<5;i++)ends.state.catalog.mods.push(Object.assign({},ends.state.catalog.mods[1],{id:'scroll-'+i,name:'Scroll '+i}));
+ ends.ctx.echoDraw(ends.state);ends.tap('down');
+ const modPane=ends.state.paneCache['echo-mod-list'],modRail=modPane.rail,modThumb=modPane.thumb;
+ scrollGeometry(ends,modPane,12+7*95+12,220,40);
+ ends.ctx.echoControllerTargets(ends.state,'mods').forEach((item,index)=>scrollingBox(item.node,modPane,12+index*95,80));
+ modPane.view.scrollTop=7;ends.ctx.echoSyncScroll(modPane,true);
+ ends.focus('mod:mod1');assert.strictEqual(modPane.view.scrollTop,0);assert.strictEqual(modThumb.style.top,'0px');
+ ends.focus('mod:scroll-4');assert.strictEqual(modPane.view.scrollTop,modPane.range);
+ assert.strictEqual(modThumb.style.top,modPane.travel+'px');
+ ends.focus('mod:scroll-1');assert(modPane.view.scrollTop>0&&modPane.view.scrollTop<modPane.range);
+ const middleBox=ends.target('mod:scroll-1').node.getBoundingClientRect();
+ assert(middleBox.top>=40&&middleBox.bottom<=260);
+ assert.strictEqual(modPane.rail,modRail);assert.strictEqual(modPane.thumb,modThumb);
+ assert.strictEqual(ends.state.positions[modPane.key],modPane.view.scrollTop);cases++;
+
+ // Options are logical rows, including Minus/Slider/Plus. Reveal labels and
+ // the complete row, then include section spacing/padding at either end.
+ const rows=fixture(managerFile),rowMod=rows.state.catalog.mods[0];
+ rowMod.options=rowMod.options.filter(item=>['offset','toggle','mode'].includes(item.id));
+ rowMod.categories[0].presets=[];rows.ctx.echoDraw(rows.state);rows.tap('down');
+ const optionsPane=rows.state.paneCache['echo-settings'];
+ scrollGeometry(rows,optionsPane,60+3*110+25,220);
+ rows.state.optionRows.forEach((item,index)=>scrollingBox(item.row,optionsPane,60+index*110,100));
+ rows.ctx.echoControllerTargets(rows.state,'options').forEach(item=>{
+  const index=['offset','toggle','mode'].indexOf(item.row);
+  scrollingBox(item.node,optionsPane,60+index*110+35,32);
+ });
+ optionsPane.view.scrollTop=45;rows.ctx.echoSyncScroll(optionsPane,true);
+ rows.focus('increase:value:mod1:offset');assert.strictEqual(optionsPane.view.scrollTop,0);
+ rows.focus('toggle:value:mod1:toggle');assert.strictEqual(optionsPane.view.scrollTop,50);
+ const rowBox=rows.state.optionRows[1].row.getBoundingClientRect();assert(rowBox.top>=20&&rowBox.bottom<=240);
+ rows.focus('value:mod1:mode');assert.strictEqual(optionsPane.view.scrollTop,optionsPane.range);
+ rows.focus('value:mod1:offset');assert.strictEqual(optionsPane.view.scrollTop,0);
+ assert.strictEqual(JSON.stringify(rows.widget.DataModel),rows.modelBefore);assert.strictEqual(rows.pending.length,0);cases++;
+
+ // A translated description or introduction may exceed the viewport. An
+ // endpoint snap must not hide the control just to expose the row's edge.
+ const tall=fixture(managerFile),tallMod=tall.state.catalog.mods[0];
+ tallMod.options=tallMod.options.filter(item=>item.id==='offset');tallMod.categories[0].presets=[];
+ tall.ctx.echoDraw(tall.state);tall.tap('down');const tallPane=tall.state.paneCache['echo-settings'];
+ scrollGeometry(tall,tallPane,60+420+30,220);
+ scrollingBox(tall.state.optionRows[0].row,tallPane,60,420);
+ tall.ctx.echoControllerTargets(tall.state,'options').forEach(item=>scrollingBox(item.node,tallPane,60+330,32));
+ tall.focus('value:mod1:offset');assert.strictEqual(tallPane.view.scrollTop,202);
+ const tallControl=tall.target('value:mod1:offset').node.getBoundingClientRect();
+ assert(tallControl.top>=20&&tallControl.bottom<=240);cases++;
 
  // A fresh field enables Save without a redraw; native data-input-disabled
  // must be reconciled before focus so Confirm activates the intended control.
@@ -579,7 +641,7 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
   top:index*41-(languagePane.view.scrollTop||0),bottom:index*41-(languagePane.view.scrollTop||0)+38});});
  lang.ctx.echoSyncScroll(languagePane,true);
  for(let i=0;i<15;i++)lang.tap('down');
- assert.strictEqual(lang.state.controller.current,'language-option:es-419');assert(languagePane.view.scrollTop>0);
+ assert.strictEqual(lang.state.controller.current,'language-option:es-419');assert.strictEqual(languagePane.view.scrollTop,languagePane.range);
  assert.strictEqual(lang.target('language-option:es-419').node.dataset.echoControllerFocus,'edit');
  for(let i=0;i<15;i++)lang.tap('up');
  assert.strictEqual(lang.state.controller.current,'language-option:en');assert.strictEqual(languagePane.view.scrollTop,0);
