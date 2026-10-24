@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1 — selector font fix
+
+- Bundle small, renamed Noto subsets for Japanese, Korean, Simplified Chinese,
+  Traditional Chinese and Thai language names, with upstream OFL notices.
+- Load the exact TrueType resources through local Cohtml font-face rules.
+- Keep font registration across dropdown redraws and widget recreation.
+- Check glyph coverage, font hashes and the packaged resource paths offline.
+
 ## 1.1.0 — language dropdown test
 
 - Auto plus a scrollable language dropdown with 14 native language names.

@@ -1,0 +1,111 @@
+{
+  "scope": "Subsets for the language-selector native names only; not general translated mod text.",
+  "source_repository": "fontsource/font-files",
+  "source_commit": "86edcf1aab7fd27e8960ea3555aab50e3480a098",
+  "fonts": [
+    {
+      "code": "ja",
+      "family": "ECHO Language Labels JA",
+      "file": "EchoLabels-ja.ttf",
+      "text": "日本語",
+      "bytes": 2216,
+      "sha256": "58177814fa5f41fc5fc98537c699c405e8869381344c00cce7c981526a2da944",
+      "sources": [
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-113-400-normal.woff",
+          "blob_sha": "de1545b4b4dcb66ee254ef74d9d9e9633d4cae3d"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-117-400-normal.woff",
+          "blob_sha": "11d181c0f4a2f63395e34f7ec9c7cff86846032c"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-118-400-normal.woff",
+          "blob_sha": "c4b1e0c00dba511507efb11eb4924acf8a8ecd69"
+        }
+      ],
+      "license": "OFL-noto-sans-jp.txt"
+    },
+    {
+      "code": "ko",
+      "family": "ECHO Language Labels KO",
+      "file": "EchoLabels-ko.ttf",
+      "text": "한국어",
+      "bytes": 2056,
+      "sha256": "7e9649f40d08fccd0b538a931f3fb2dccb04ba210d8d956a3e32b6e0ce697066",
+      "sources": [
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-117-400-normal.woff",
+          "blob_sha": "6b440c9c1b008c2c021f24d50dcb043a31eae390"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-118-400-normal.woff",
+          "blob_sha": "e3e309fa488bd707858f01338460071616a0eacd"
+        }
+      ],
+      "license": "OFL-noto-sans-kr.txt"
+    },
+    {
+      "code": "zh-hans",
+      "family": "ECHO Language Labels ZH-HANS",
+      "file": "EchoLabels-zh-hans.ttf",
+      "text": "简体中文",
+      "bytes": 2588,
+      "sha256": "efcbc164251e951b8b4baf0664d098e741fcf63ead3c178a8ca065e3624f275b",
+      "sources": [
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-117-400-normal.woff",
+          "blob_sha": "2a2a6a0bcf9b6fe9beda87fa9153ff6b8d945d16"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-118-400-normal.woff",
+          "blob_sha": "37f7a000c01eb4bd591c3d043674a294d033565b"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-119-400-normal.woff",
+          "blob_sha": "18119266f7ba87961214c6acbb796e326e2fd347"
+        }
+      ],
+      "license": "OFL-noto-sans-sc.txt"
+    },
+    {
+      "code": "zh-hant",
+      "family": "ECHO Language Labels ZH-HANT",
+      "file": "EchoLabels-zh-hant.ttf",
+      "text": "繁體中文",
+      "bytes": 3284,
+      "sha256": "1c101e34dfb06c58c6974fe9c1511ba3c3c036f97fcda40c723a2d6cbe6889e4",
+      "sources": [
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-118-400-normal.woff",
+          "blob_sha": "3cb59e2d1859a34d06392160bbee8b5648fbe568"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-122-400-normal.woff",
+          "blob_sha": "df78611e9adad30a3b4aab41a9dc412b44ca957f"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-123-400-normal.woff",
+          "blob_sha": "f3cef38be943dd9ae45c4b352c8cc01d8a4a8a47"
+        }
+      ],
+      "license": "OFL-noto-sans-tc.txt"
+    },
+    {
+      "code": "th",
+      "family": "ECHO Language Labels TH",
+      "file": "EchoLabels-th.ttf",
+      "text": "ไทย",
+      "bytes": 1736,
+      "sha256": "2288e134a7d062a595400f451072bace040ef510821c3e7a3a757a0a50b0731d",
+      "sources": [
+        {
+          "path": "fonts/google/noto-sans-thai/files/noto-sans-thai-thai-400-normal.woff",
+          "blob_sha": "4933fe4bf093ae4f1defe0907372bfc7561f79dc"
+        }
+      ],
+      "license": "OFL-noto-sans-thai.txt"
+    }
+  ],
+  "fonttools_version": "4.61.1"
+}

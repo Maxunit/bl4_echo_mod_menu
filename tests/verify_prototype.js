@@ -6,7 +6,7 @@ const dictionary=JSON.parse(fs.readFileSync(path.join(__dirname,'../ui/i18n.json
 assert.deepStrictEqual(Object.keys(dictionary.en).sort(),Object.keys(dictionary.de).sort());
 let source=fs.readFileSync(path.join(__dirname,'../ui/editor.js'),'utf8').replace('__ECHO_TRANSLATIONS__',JSON.stringify(dictionary));
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../ui/controller.js'),'utf8'),ctx);
-vm.runInContext(fs.readFileSync(path.join(__dirname,'../ui/language.js'),'utf8').replace('__ECHO_LANGUAGES__',fs.readFileSync(path.join(__dirname,'../src/bl4_echo_mod_menu/languages.json'),'utf8')),ctx);
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../ui/language.js'),'utf8').replace('__ECHO_LANGUAGES__',fs.readFileSync(path.join(__dirname,'../src/bl4_echo_mod_menu/languages.json'),'utf8')).replace('__ECHO_LANGUAGE_FONTS__',JSON.stringify(JSON.parse(fs.readFileSync(path.join(__dirname,'../ui/fonts/manifest.json'),'utf8')).fonts)),ctx);
 vm.runInContext(source,ctx);
 function chooseLanguage(state,code){
  state.root.querySelector('.echo-language-trigger').click();

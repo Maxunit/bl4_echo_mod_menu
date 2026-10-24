@@ -3,6 +3,7 @@ from pathlib import Path
 import ast,hashlib,importlib.util,json,shutil,zipfile
 from package_build import ROOT,SOURCE,MODULE,ARCHIVE_NAME,add_bytes,write_sdkmod,runtime_files,ordered_paths
 from pak_codec import read_pak,write_pak
+from font_validation import label_fonts, RESOURCE_PREFIX
 PACKAGE=ROOT/'package'
 DIST=ROOT/'dist'
 PAK_NAME='zzz_BL4_ECHO_Mod_Menu_999_P.pak'
@@ -31,11 +32,14 @@ def build_ui():
     translations=json.loads((ROOT/'ui/i18n.json').read_text(encoding='utf-8'))
     assert set(translations['en'])==set(translations['de'])
     languages=json.loads((MODULE/'languages.json').read_text(encoding='utf-8'))
+    fonts=label_fonts()
     assert len(languages)==len({row['code'] for row in languages})==14
     parts=[(ROOT/'ui'/n).read_text(encoding='utf-8') for n in ('transport.js','controller.js','language.js','editor.js','bootstrap.js')]
     extension='\n'.join(parts).replace('__ECHO_TRANSLATIONS__',json.dumps(translations,ensure_ascii=False,separators=(',',':')))
     extension=extension.replace('__ECHO_LANGUAGES__',json.dumps(languages,ensure_ascii=False,separators=(',',':')))
+    extension=extension.replace('__ECHO_LANGUAGE_FONTS__',json.dumps([{k:font[k] for k in ('code','family','file')} for font in fonts],separators=(',',':')))
     files=native_resources()
+    for font in fonts:files[RESOURCE_PREFIX+font['file']]=(ROOT/'ui/fonts'/font['file']).read_bytes()
     files[MANAGER]=((ROOT/'native/widget_manager.base.js').read_text(encoding='utf-8')+"\n;(function () {\n'use strict';\n"+extension+'\n})();\n').encode()
     files[NAVIGATION]=((ROOT/'native/navigationbar.base.js').read_text(encoding='utf-8')+'\n;\n'+(ROOT/'ui/navigation.js').read_text(encoding='utf-8')).encode()
     packed=write_pak(files);assert read_pak(packed)==files
@@ -51,7 +55,7 @@ def build_example():
         for p in ordered_paths(source.rglob('*.py')):add_bytes(archive,'echo_menu_example/'+p.relative_to(source).as_posix(),p.read_bytes())
 
 def source_files():
-    for folder in ('src','ui','native','tools','tests','docs','examples','.github'):
+    for folder in ('src','ui','native','tools','tests','docs','examples','.github','licenses'):
         for p in ordered_paths((ROOT/folder).rglob('*')):
             if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc':yield p
     for name in ('README.md','CHANGELOG.md','COMPATIBILITY.md','THIRD_PARTY_NOTICES.md','.gitignore','.gitattributes'):
@@ -70,6 +74,7 @@ def main():
     (PACKAGE/'docs').mkdir()
     for name in ('CONTROLS.md','MOD_AUTHORS.md','API.md'):
         shutil.copyfile(ROOT/'docs'/name,PACKAGE/'docs'/name)
+    shutil.copytree(ROOT/'licenses',PACKAGE/'licenses')
     manifest={'version':release,'provider_api':1,'distribution':'sdkmod','resources_sha256':hashes,
               'native_profile':'Steam 1.11 / PE 0xf38df04c / image size 0x26e12000',
               'runtime_sha256':{p.relative_to(SOURCE).as_posix():sha(p.read_bytes()) for p in runtime_files()}}

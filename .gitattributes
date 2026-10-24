@@ -4,5 +4,6 @@
 *.ncs binary
 *.zip binary
 *.png binary
+*.ttf binary
 native/*.base.js -whitespace
 tests/fixtures/** -whitespace

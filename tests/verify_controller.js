@@ -19,7 +19,7 @@ function fixture(managerFile) {
  vm.runInContext('class GbxCustomElement extends DomNode { constructor(){super("widget-list-menu");} Init(){} connectedCallback(){} }\n'+source('fixtures/native_input/widget_class_patch2.js')+'\nthis.NativeWidgetBase=WidgetBase;',ctx);
  vm.runInContext(source('fixtures/native_input/menu_base.js')+'\n'+source('fixtures/native_input/oak_menu_base.js')+'\nthis.NativeOakMenuBase=Widget_OakMenuBase;',ctx);
  vm.runInContext(source('fixtures/native_input/list_menu.js')+'\nthis.NativeListMenu=Widget_ListMenu;',ctx);
- vm.runInContext(source('../ui/controller.js')+'\n'+source('../ui/language.js').replace('__ECHO_LANGUAGES__',source('../src/bl4_echo_mod_menu/languages.json'))+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',source('../ui/i18n.json')),ctx);
+ vm.runInContext(source('../ui/controller.js')+'\n'+source('../ui/language.js').replace('__ECHO_LANGUAGES__',source('../src/bl4_echo_mod_menu/languages.json')).replace('__ECHO_LANGUAGE_FONTS__',JSON.stringify(JSON.parse(source('../ui/fonts/manifest.json')).fonts))+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',source('../ui/i18n.json')),ctx);
  ctx.InputMgr.Init();ctx.InputMgr.SimulateMouse=true;ctx.InputMgr.OnInputDeviceChanged(0,1,2,0);
  const actions=vm.runInContext('({up:INPUT_NAV_UP,down:INPUT_NAV_DOWN,left:INPUT_NAV_LEFT,right:INPUT_NAV_RIGHT,select:INPUT_NAV_SELECTED,pressed:InputActionType.PRESSED,released:InputActionType.RELEASED})',ctx);
  const trigger=ctx.engine.trigger;
@@ -454,6 +454,12 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  lang.focus('value:mod1:offset');lang.tap('select');lang.tap('right');lang.tap('select');
  const draftBefore=JSON.stringify(lang.state.drafts),modelBefore=JSON.stringify(lang.widget.DataModel);
  open();assert.strictEqual(languages().length,14);
+ const fontStyle=lang.doc.getElementById('echo-language-fonts');
+ assert(fontStyle);assert.strictEqual((fontStyle.textContent.match(/@font-face/g)||[]).length,5);
+ for(const font of JSON.parse(source('../ui/fonts/manifest.json')).fonts){
+  assert(fontStyle.textContent.includes('coui://uiresources/echo_mod_menu/fonts/'+font.file));
+  assert(languages().find(n=>n.getAttribute('lang')===font.code).querySelector('.echo-language-name').style.cssText.includes(font.family));
+ }
  assert.deepStrictEqual(languages().map(n=>n.getAttribute('lang')),names.map(n=>n.code));
  assert.deepStrictEqual(languages().map(n=>n.querySelector('.echo-language-name').textContent),names.map(n=>n.name));
  assert.strictEqual(lang.state.controller.current,'language-option:en');
@@ -468,6 +474,8 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(lang.escapeStacks.get(lang.widget.WidgetIdent).length,0);
  assert.strictEqual(lang.state.scrollPanes.length,2);assert(lang.env.observers.at(-1).disconnected);
  assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
+ assert.strictEqual(lang.doc.getElementById('echo-language-fonts'),fontStyle);
+ assert.strictEqual(lang.doc.body.querySelectorAll('style').filter(n=>n.id==='echo-language-fonts').length,1);
 
  open();lang.tap('down');lang.tap('select');assert(!lang.state.languageMenu);
  let languageRequest=lang.pending.shift();assert(languageRequest.url.endsWith('/preferences'));

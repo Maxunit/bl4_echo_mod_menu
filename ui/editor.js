@@ -464,7 +464,7 @@ function echoNumericEditor(state, parent, mod, option) {
             if (commit()) {
                 remember(); state.textEnterConfirmed = (state.textEnterConfirmed || 0) + 1;
                 if (state.textEnterConfirmed <= 16) record('editor_text_confirmed', {
-                    layout_revision:'1.1.0', dom_focus:document.activeElement === input,
+                    layout_revision:'1.1.1', dom_focus:document.activeElement === input,
                     native_focus:!!state.nativeTextInput && state.nativeTextInput.input === input,
                     key_shape:event.code || (event.keyCode === 13 || event.which === 13 ? 'code13' : 'Enter')});
             }
@@ -1089,7 +1089,7 @@ function echoMountEditor(widget) {
             echoFlushScrollLayout(state);
         }, true);
     }
-    echoDraw(state); record('editor_mounted', {native_host:widget.WidgetIdent, native_model_written:false, layout_revision:'1.1.0'});
+    echoDraw(state); record('editor_mounted', {native_host:widget.WidgetIdent, native_model_written:false, layout_revision:'1.1.1'});
     return state;
 }
 function echoOnEditorLifecycle(widget, name) {
@@ -1116,7 +1116,7 @@ function echoOnEditorLifecycle(widget, name) {
 function echoProtoSelect() { /* The native placeholder model is retained; the ECHO editor owns its own selection. */ }
 function echoDescribeEditor(widget) {
     var state = widget && widget.EchoMenuState; if (!state) return null;
-    return {layout_revision:'1.1.0', catalog_count:state.catalog.mods.length, created_mod_rows:state.root.querySelectorAll('.echo-mod-card').length,
+    return {layout_revision:'1.1.1', catalog_count:state.catalog.mods.length, created_mod_rows:state.root.querySelectorAll('.echo-mod-card').length,
         controller:{available:!!state.controller.available, directional:!!state.controller.directional,
             capability_issue:state.controller.capabilityIssue,
             region:state.controller.region, target:state.controller.current, editing:!!state.controller.edit,

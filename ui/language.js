@@ -2,6 +2,19 @@
  * Only this panel owns its focus/cancel context. No native model is changed.
  */
 var echoLanguages = __ECHO_LANGUAGES__;
+var echoLanguageFontFaces = __ECHO_LANGUAGE_FONTS__;
+function echoLanguageInstallFonts() {
+    if (document.getElementById('echo-language-fonts')) return;
+    var style = document.createElement('style');
+    style.id = 'echo-language-fonts';
+    style.textContent = echoLanguageFontFaces.map(function (font) {
+        return '@font-face {font-family:"' + font.family + '";font-style:normal;font-weight:400;' +
+            'src:url("coui://uiresources/echo_mod_menu/fonts/' + font.file + '") format("truetype");}';
+    }).join('\n');
+    // Keep the registration for this document's lifetime. It is independent
+    // from widget destruction/recreation and is never removed on redraw.
+    (document.head || document.body).appendChild(style);
+}
 function echoLocale(code) {
     code = String(code || '').toLowerCase().replace(/_/g, '-');
     var exact = echoLanguages.filter(function (row) { return row.code === code || row.aliases.indexOf(code) >= 0; })[0];
@@ -20,14 +33,8 @@ function echoLanguageEntry(code) {
     return echoLanguages.filter(function (row) { return row.code === code; })[0] || echoLanguages[0];
 }
 function echoLanguageFont(code) {
-    var families = {
-        ja:'"Noto Sans JP","Yu Gothic",Meiryo,sans-serif',
-        ko:'"Noto Sans KR","Malgun Gothic",sans-serif',
-        'zh-hans':'"Noto Sans CJK SC","Microsoft YaHei",SimHei,sans-serif',
-        'zh-hant':'"Noto Sans CJK TC","Microsoft JhengHei",PMingLiU,sans-serif',
-        th:'"Noto Sans Thai","Leelawadee UI",Tahoma,sans-serif'
-    };
-    return families[code] || 'Industry-Medium,sans-serif';
+    var font = echoLanguageFontFaces.filter(function (row) { return row.code === code; })[0];
+    return font ? '"' + font.family + '",Industry-Medium' : 'Industry-Medium';
 }
 function echoLanguageExpanded(menu, expanded) {
     menu.anchor.setAttribute('aria-expanded',expanded ? 'true' : 'false');
@@ -79,7 +86,7 @@ function echoLanguageOpen(state, anchor, wrap, arrow) {
         {background:row.code === selected ? '#15485a' : '#092a35',hover:'#1a5264',border:'transparent',focus:'#9ae9ff',corner:false});
         button.className = 'echo-language-option'; button.setAttribute('role','option'); button.setAttribute('aria-selected',row.code === selected ? 'true' : 'false');
         echoNode(button, 'div', null, '', 'width:0.5rem;height:0.5rem;margin-right:0.9rem;background-color:' + (row.code === selected ? '#df9d4e' : 'transparent') + ';pointer-events:none;');
-        var label = echoText(button, row.name, 'echo-language-name', 'flex:1;white-space:nowrap;font-size:1.5rem;font-family:' + echoLanguageFont(row.code) + ';');
+        var label = echoText(button, row.name, 'echo-language-name', 'flex:1;white-space:nowrap;font-size:1.5rem;font-style:normal;font-weight:400;font-family:' + echoLanguageFont(row.code) + ';');
         label.setAttribute('lang',row.code); button.setAttribute('lang',row.code);
     });
     echoLanguageExpanded(menu,true);
@@ -96,6 +103,7 @@ function echoLanguageOpen(state, anchor, wrap, arrow) {
     }
 }
 function echoLanguageRender(state, parent) {
+    echoLanguageInstallFonts();
     var auto = echoControllerButton(state, parent, 'language:auto', 'language', echoT(state,'auto'), function () { echoPrefer(state,'auto'); },
         state.preference === 'auto', 'height:3.4rem;font-size:1.2rem;padding:0.4rem 0.8rem;');
     auto.setAttribute('aria-pressed',state.preference === 'auto' ? 'true' : 'false');
@@ -105,7 +113,7 @@ function echoLanguageRender(state, parent) {
         state.preference !== 'auto', 'width:100%;height:3.4rem;margin:0;justify-content:space-between;padding:0.4rem 0.9rem;', false,
         {background:'#092a35',hover:'#17475a',border:'#578293',focus:'#9ae9ff',corner:false});
     button.className = 'echo-language-trigger'; button.setAttribute('aria-haspopup','listbox'); button.setAttribute('aria-expanded','false');
-    var label = echoText(button, selected.name, 'echo-language-current', 'flex:1;font-size:1.4rem;white-space:nowrap;font-family:' + echoLanguageFont(selected.code) + ';');
+    var label = echoText(button, selected.name, 'echo-language-current', 'flex:1;font-size:1.4rem;white-space:nowrap;font-style:normal;font-weight:400;font-family:' + echoLanguageFont(selected.code) + ';');
     label.setAttribute('lang',selected.code);
     arrow = echoNode(button,'div',null,'echo-language-arrow','width:0;height:0;margin-left:1rem;border-left:0.45rem solid transparent;border-right:0.45rem solid transparent;border-top:0.55rem solid #90b9c8;pointer-events:none;');
 }

@@ -11,7 +11,7 @@ ctx.WidgetManager.prototype.AttachInstance=function(request){
  assert(!request.widget.EchoObserved);this.WidgetMap.set(request.WidgetIdent,request.widget);return 42;
 };
 ctx.WidgetMgr=new ctx.WidgetManager();
-vm.runInContext(read('ui/transport.js')+'\n'+read('ui/controller.js')+'\n'+read('ui/language.js').replace('__ECHO_LANGUAGES__',read('src/bl4_echo_mod_menu/languages.json'))+'\n'+read('ui/editor.js').replace('__ECHO_TRANSLATIONS__',read('ui/i18n.json'))+'\n'+read('ui/bootstrap.js'),ctx);
+vm.runInContext(read('ui/transport.js')+'\n'+read('ui/controller.js')+'\n'+read('ui/language.js').replace('__ECHO_LANGUAGES__',read('src/bl4_echo_mod_menu/languages.json')).replace('__ECHO_LANGUAGE_FONTS__',JSON.stringify(JSON.parse(read('ui/fonts/manifest.json')).fonts))+'\n'+read('ui/editor.js').replace('__ECHO_TRANSLATIONS__',read('ui/i18n.json'))+'\n'+read('ui/bootstrap.js'),ctx);
 function host(ident){
  const w=doc.body.appendChild(new Node('widget-list-menu'));w.WidgetIdent=ident;w.WidgetDiv=w;w.IsActivated=false;w.IsInitialized=true;
  w.DataModel=Object.freeze({entries:Object.freeze([])});w.transitions=[];

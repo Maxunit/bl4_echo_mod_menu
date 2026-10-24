@@ -37,6 +37,20 @@ ZIP timestamps, member order and permissions are fixed. The reproducibility
 check extracts the source archive into a clean directory, runs the build and
 compares both output archives byte-for-byte.
 
+The build validates the committed selector font subsets and includes them in the
+PAK. No font software or downloads are needed for normal builds. For optional
+regeneration, `ui/fonts/manifest.json` lists each pinned upstream WOFF input and
+the FontTools version. Download those files into one directory, install that
+FontTools version, then run:
+
+```sh
+python tools/rebuild_language_fonts.py <input-directory>
+```
+
+The regeneration tool verifies the original Git blobs and requires byte-identical
+subset outputs before replacing the committed fonts. OFL notices remain in
+`licenses/fonts/` and are copied into the install package.
+
 GitHub Actions runs tests and builds on `windows-latest`, uploading the installer,
 developer archive and checksums as `ECHO-Mod-Menu-Windows`. The workflow does not
 publish a GitHub Release automatically and uses read-only repository permissions.
