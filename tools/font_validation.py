@@ -1,8 +1,9 @@
-"""Validate the committed selector fonts without optional font-building packages."""
+"""Validate menu font assets and glyph coverage without font-building packages."""
 import hashlib
 import json
 from pathlib import Path
 import struct
+from localization_data import load_translations, required_font_codepoints
 
 ROOT = Path(__file__).resolve().parent.parent
 RESOURCE_PREFIX = 'OakGame/Content/uiresources/echo_mod_menu/fonts/'
@@ -27,7 +28,7 @@ def glyph_index(data, codepoint):
         size = struct.unpack_from('>H', cmap, offset + 2)[0]
         segments = struct.unpack_from('>H', cmap, offset + 6)[0] // 2
         sub = cmap[offset:offset + size]
-        assert len(sub) == size and 0 < segments < 256
+        assert len(sub) == size and 0 < segments < 4096
         end_at = 14
         start_at = end_at + segments * 2 + 2
         delta_at = start_at + segments * 2
@@ -46,20 +47,19 @@ def glyph_index(data, codepoint):
     return 0
 
 
-def label_fonts():
+def ui_fonts():
     manifest = json.loads((ROOT/'ui/fonts/manifest.json').read_text(encoding='utf-8'))
-    languages = json.loads((ROOT/'src/bl4_echo_mod_menu/languages.json').read_text(encoding='utf-8'))
-    names = {row['code']: row['name'] for row in languages}
+    dictionaries = load_translations()
     fonts = manifest['fonts']
-    assert {font['code'] for font in fonts} == {'ja', 'ko', 'zh-hans', 'zh-hant', 'th'}
+    assert {font['code'] for font in fonts} == {'latin','ja','ko','zh-hans','zh-hant','th'}
     for font in fonts:
-        assert font['file'] == 'EchoLabels-' + font['code'] + '.ttf'
-        assert font['family'] == 'ECHO Language Labels ' + font['code'].upper()
-        assert font['text'] == names[font['code']]
+        assert font['file'] == 'EchoUI-' + font['code'] + '.ttf'
+        assert font['family'] == 'ECHO Menu Font ' + font['code'].upper()
         data = (ROOT/'ui/fonts'/font['file']).read_bytes()
-        assert len(data) == font['bytes'] <= 65536
+        assert len(data) == font['bytes'] <= 2097152
         assert hashlib.sha256(data).hexdigest() == font['sha256']
-        assert all(glyph_index(data, ord(char)) != 0 for char in font['text'])
+        missing = [point for point in required_font_codepoints(font['code'],dictionaries) if glyph_index(data,point) == 0]
+        assert not missing, (font['code'],'missing translated glyphs',missing)
         license_text = (ROOT/'licenses/fonts'/font['license']).read_text(encoding='utf-8')
         assert 'SIL OPEN FONT LICENSE Version 1.1' in license_text
     return fonts

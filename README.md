@@ -46,17 +46,17 @@ Choose **Auto** to follow the game's text language, or open the adjacent dropdow
 to select one of 14 languages by its native name. Spanish (Spain/Latin America)
 and Chinese (Simplified/Traditional) have separate selections.
 
-In this 1.1.1 test build, ECHO's own menu texts are available in English and German.
-The other selections use English for missing ECHO text, while mod-provided
-translations use the selected language. The dropdown tests language selection,
-character rendering and input handling; it does not change the game's language.
+ECHO's own menu texts are translated into all 14 selectable languages.
+Mod-provided translations use the selected language, with English fallback when
+needed. This selection changes ECHO's language independently of the game.
 
 Confirm opens the list. D-pad up/down navigates and scrolls within it; Confirm
 applies the selection and Cancel closes the list without changing the language.
 Mouse and virtual gamepad cursor selection are also supported.
 
-The five Asian language names use bundled TrueType font subsets loaded from the
-PAK. They cover the selector labels only and do not require Windows language packs.
+Bundled TrueType fonts cover ECHO's translated menu text and language names,
+including Latin, Cyrillic and the five Asian scripts. Windows language packs are
+not required. Mod names, descriptions and option text remain supplied by each mod.
 
 Keyboard capture supports individual supported keyboard keys. It does not add
 an on-screen keyboard or physical gamepad-button rebinding.
@@ -103,6 +103,6 @@ not part of this repository.
 
 ## Version
 
-Current test version: **1.1.1**, provider API **1**. See the
+Current test version: **1.2.0**, provider API **1**. See the
 [changelog](CHANGELOG.md), [compatibility](COMPATIBILITY.md) and
 [third-party notices](THIRD_PARTY_NOTICES.md).

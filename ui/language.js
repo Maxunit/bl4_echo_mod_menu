@@ -34,7 +34,13 @@ function echoLanguageEntry(code) {
 }
 function echoLanguageFont(code) {
     var font = echoLanguageFontFaces.filter(function (row) { return row.code === code; })[0];
-    return font ? '"' + font.family + '",Industry-Medium' : 'Industry-Medium';
+    var common = echoLanguageFontFaces.filter(function (row) { return row.code === 'latin'; })[0];
+    return (font ? '"' + font.family + '",' : '') + 'Industry-Medium' + (common ? ',"' + common.family + '"' : '');
+}
+function echoMenuFont(code) {
+    var font = echoLanguageFontFaces.filter(function (row) { return row.code === code; })[0];
+    var common = echoLanguageFontFaces.filter(function (row) { return row.code === 'latin'; })[0];
+    return 'Industry-Medium' + (font ? ',"' + font.family + '"' : '') + (common ? ',"' + common.family + '"' : '');
 }
 function echoLanguageExpanded(menu, expanded) {
     menu.anchor.setAttribute('aria-expanded',expanded ? 'true' : 'false');

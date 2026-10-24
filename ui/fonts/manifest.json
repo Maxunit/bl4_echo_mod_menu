@@ -1,19 +1,170 @@
 {
-  "scope": "Subsets for the language-selector native names only; not general translated mod text.",
+  "scope": "Glyph subsets for bundled ECHO menu translations and selector names; common Latin/Cyrillic and regional scripts, not complete Unicode coverage.",
   "source_repository": "fontsource/font-files",
   "source_commit": "86edcf1aab7fd27e8960ea3555aab50e3480a098",
   "fonts": [
     {
-      "code": "ja",
-      "family": "ECHO Language Labels JA",
-      "file": "EchoLabels-ja.ttf",
-      "text": "日本語",
-      "bytes": 2216,
-      "sha256": "58177814fa5f41fc5fc98537c699c405e8869381344c00cce7c981526a2da944",
+      "code": "latin",
+      "family": "ECHO Menu Font LATIN",
+      "file": "EchoUI-latin.ttf",
+      "extra_ranges": [
+        [
+          32,
+          591
+        ],
+        [
+          768,
+          879
+        ],
+        [
+          1024,
+          1327
+        ]
+      ],
       "sources": [
+        {
+          "path": "fonts/google/noto-sans/files/noto-sans-cyrillic-ext-400-normal.woff",
+          "blob_sha": "1a09b27506652e73995037c913a5628b4314d133"
+        },
+        {
+          "path": "fonts/google/noto-sans/files/noto-sans-cyrillic-400-normal.woff",
+          "blob_sha": "fc2abc68d44a3aaa8995178373372ffb3c3692cb"
+        },
+        {
+          "path": "fonts/google/noto-sans/files/noto-sans-vietnamese-400-normal.woff",
+          "blob_sha": "edd1ac0ec46184c46d505793f0330aa29807c91c"
+        },
+        {
+          "path": "fonts/google/noto-sans/files/noto-sans-latin-ext-400-normal.woff",
+          "blob_sha": "c99466987151b54e01f529fbeda48c243f5eff39"
+        },
+        {
+          "path": "fonts/google/noto-sans/files/noto-sans-latin-400-normal.woff",
+          "blob_sha": "ee9eb7f8bb37b1172f879f6d8bf833750914e525"
+        }
+      ],
+      "license": "OFL-noto-sans.txt",
+      "bytes": 110276,
+      "sha256": "a95afc8037eb2f14a020d41d678ad19960c2e354aad9faae8f778fb04694f87a"
+    },
+    {
+      "code": "ja",
+      "family": "ECHO Menu Font JA",
+      "file": "EchoUI-ja.ttf",
+      "extra_ranges": [
+        [
+          12352,
+          12543
+        ]
+      ],
+      "sources": [
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-54-400-normal.woff",
+          "blob_sha": "f97695c168bdb9a3fe61cf644ba5d1ca3e46af49"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-61-400-normal.woff",
+          "blob_sha": "67b1f99ac647924b39f6be5c1d5ea5ef2f96de48"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-65-400-normal.woff",
+          "blob_sha": "71623f1c7816507b174b5bfdc54761ddb08097d3"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-77-400-normal.woff",
+          "blob_sha": "220154459ce51287c486ab4e5bbc169c8608b255"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-79-400-normal.woff",
+          "blob_sha": "2995c34b6398a0b5b659e9cd75bfd441a6efdd38"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-83-400-normal.woff",
+          "blob_sha": "33e998571bbb0749de01368221410284c36c9258"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-84-400-normal.woff",
+          "blob_sha": "8368f99a025ecb657edf5d87d010c3c65120f88c"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-92-400-normal.woff",
+          "blob_sha": "c5e3dae00c8b338ac219e506af81461a53aa5088"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-93-400-normal.woff",
+          "blob_sha": "0ddbf691796159f96673d389f97ecb103f678fbb"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-96-400-normal.woff",
+          "blob_sha": "4928f62724eca17d04473cf36ad63b24460ebd47"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-98-400-normal.woff",
+          "blob_sha": "384a50539c3041378d5bcf63f5884efb9c4a1bb8"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-101-400-normal.woff",
+          "blob_sha": "a2364901cc2376d509ad1c07550190d620b56b64"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-102-400-normal.woff",
+          "blob_sha": "4aa0d789dd8abee1e52c30178f111cf54d5b176c"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-103-400-normal.woff",
+          "blob_sha": "eb45834964a88a3ff90fdd804e075140a25bb86b"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-104-400-normal.woff",
+          "blob_sha": "e29ffd8fec5bf9d3d42db4f4ad4761d157985318"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-105-400-normal.woff",
+          "blob_sha": "6db83c5d5181ad96ced626f9f8ea6ecde55aba71"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-106-400-normal.woff",
+          "blob_sha": "f45a63e69ebea64c160c2721c39e03022ce4c3c8"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-107-400-normal.woff",
+          "blob_sha": "0777b8a9e9e8ac268e8e66daa6f2f9e0562237c8"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-108-400-normal.woff",
+          "blob_sha": "41a3519282205222cc4bf110099889d08ad01938"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-109-400-normal.woff",
+          "blob_sha": "06172aa0ee0aa84d742a6c5c6e431a8139086168"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-110-400-normal.woff",
+          "blob_sha": "e96ff86edca532aa499628acb5c269e90c98ac37"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-111-400-normal.woff",
+          "blob_sha": "d6e133ea93fd0748470d5da9207c5b3a8b7339ab"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-112-400-normal.woff",
+          "blob_sha": "8870fb02e5673ff138bc77044dcf0c073c1ef07c"
+        },
         {
           "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-113-400-normal.woff",
           "blob_sha": "de1545b4b4dcb66ee254ef74d9d9e9633d4cae3d"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-114-400-normal.woff",
+          "blob_sha": "672567440b30e36ddc0fcf04a4762d370173a854"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-115-400-normal.woff",
+          "blob_sha": "aea8682aed962f7956b901ce9d45260e92f008db"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-116-400-normal.woff",
+          "blob_sha": "ff133adced9c84dcfe955116205b67584d75f672"
         },
         {
           "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-117-400-normal.woff",
@@ -22,18 +173,54 @@
         {
           "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-118-400-normal.woff",
           "blob_sha": "c4b1e0c00dba511507efb11eb4924acf8a8ecd69"
+        },
+        {
+          "path": "fonts/google/noto-sans-jp/files/noto-sans-jp-119-400-normal.woff",
+          "blob_sha": "3d46da669ef43c7c84b5f7acb8a78f627a7f0513"
         }
       ],
-      "license": "OFL-noto-sans-jp.txt"
+      "license": "OFL-noto-sans-jp.txt",
+      "bytes": 150300,
+      "sha256": "3770d5df7a2b094248f182edb4b7ad6ba96d72f2ac6c3e65b1b244f2cc875180"
     },
     {
       "code": "ko",
-      "family": "ECHO Language Labels KO",
-      "file": "EchoLabels-ko.ttf",
-      "text": "한국어",
-      "bytes": 2056,
-      "sha256": "7e9649f40d08fccd0b538a931f3fb2dccb04ba210d8d956a3e32b6e0ce697066",
+      "family": "ECHO Menu Font KO",
+      "file": "EchoUI-ko.ttf",
+      "extra_ranges": [],
       "sources": [
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-108-400-normal.woff",
+          "blob_sha": "f8b16f8ad4026401da663b17859f822470207fc7"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-109-400-normal.woff",
+          "blob_sha": "78f4985465a2d2d135a469fa9ecc1ab762decef1"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-110-400-normal.woff",
+          "blob_sha": "0b4af8cdbae6523469702724645e36b520333c2b"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-112-400-normal.woff",
+          "blob_sha": "e7cddf99328a3ef6aaf7de0f4290c82c551ae175"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-113-400-normal.woff",
+          "blob_sha": "5d6ceda07cfa57bb97ed57e35f8abd042e6fd5b2"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-114-400-normal.woff",
+          "blob_sha": "336d06dfbbc0797a741aa00ab215a24762203464"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-115-400-normal.woff",
+          "blob_sha": "b7b334c8f742e3b1d3c745066e52786ff9631578"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-116-400-normal.woff",
+          "blob_sha": "5d7d0e5a286f8eb13cd874475ad80b3f97ad9541"
+        },
         {
           "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-117-400-normal.woff",
           "blob_sha": "6b440c9c1b008c2c021f24d50dcb043a31eae390"
@@ -41,18 +228,58 @@
         {
           "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-118-400-normal.woff",
           "blob_sha": "e3e309fa488bd707858f01338460071616a0eacd"
+        },
+        {
+          "path": "fonts/google/noto-sans-kr/files/noto-sans-kr-119-400-normal.woff",
+          "blob_sha": "1ce4ed13c281e00e647a07e402a7fc32fedbd6ec"
         }
       ],
-      "license": "OFL-noto-sans-kr.txt"
+      "license": "OFL-noto-sans-kr.txt",
+      "bytes": 33060,
+      "sha256": "22cec9323ed41bc475c9c30805fc0c319da5c94c917b94a2643ce5249b418efe"
     },
     {
       "code": "zh-hans",
-      "family": "ECHO Language Labels ZH-HANS",
-      "file": "EchoLabels-zh-hans.ttf",
-      "text": "简体中文",
-      "bytes": 2588,
-      "sha256": "efcbc164251e951b8b4baf0664d098e741fcf63ead3c178a8ca065e3624f275b",
+      "family": "ECHO Menu Font ZH-HANS",
+      "file": "EchoUI-zh-hans.ttf",
+      "extra_ranges": [],
       "sources": [
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-107-400-normal.woff",
+          "blob_sha": "67077ffb382e24a971bfef1368eaaa8cbc11cd64"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-108-400-normal.woff",
+          "blob_sha": "0be8fcfd42b85e03eee1407c0bc0aa1237f46935"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-110-400-normal.woff",
+          "blob_sha": "fbc8493eda8a086443d7c6ca01dd4ff692114375"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-111-400-normal.woff",
+          "blob_sha": "05e23aa7b981e35c2fde329dcbe13d768affcf92"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-112-400-normal.woff",
+          "blob_sha": "3d154b72db94f476c281bfa99ae23aa69bd6e1e2"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-113-400-normal.woff",
+          "blob_sha": "f6140fca0e5853e1d3c32807032cc751e1d51e95"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-114-400-normal.woff",
+          "blob_sha": "1f89e43b2f0d67f5105032ea6a088346633c3656"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-115-400-normal.woff",
+          "blob_sha": "fca0580772b4d15e7d5ce4c769307447f6323ed3"
+        },
+        {
+          "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-116-400-normal.woff",
+          "blob_sha": "dd559146ae0ce0feb3e741158bfa7d59c6ff2f17"
+        },
         {
           "path": "fonts/google/noto-sans-sc/files/noto-sans-sc-117-400-normal.woff",
           "blob_sha": "2a2a6a0bcf9b6fe9beda87fa9153ff6b8d945d16"
@@ -66,19 +293,55 @@
           "blob_sha": "18119266f7ba87961214c6acbb796e326e2fd347"
         }
       ],
-      "license": "OFL-noto-sans-sc.txt"
+      "license": "OFL-noto-sans-sc.txt",
+      "bytes": 67336,
+      "sha256": "c2d881ffe981e17a6532b0da1825cbfee6361ce95ae6c69aa606e53b2ae9e47a"
     },
     {
       "code": "zh-hant",
-      "family": "ECHO Language Labels ZH-HANT",
-      "file": "EchoLabels-zh-hant.ttf",
-      "text": "繁體中文",
-      "bytes": 3284,
-      "sha256": "1c101e34dfb06c58c6974fe9c1511ba3c3c036f97fcda40c723a2d6cbe6889e4",
+      "family": "ECHO Menu Font ZH-HANT",
+      "file": "EchoUI-zh-hant.ttf",
+      "extra_ranges": [],
       "sources": [
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-87-400-normal.woff",
+          "blob_sha": "5353748f5aec4738fb392285f330be929c04396e"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-112-400-normal.woff",
+          "blob_sha": "d90b800e0f17be444eb534b2f2366de873b13dba"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-113-400-normal.woff",
+          "blob_sha": "9ada8bc32ccc1fb0cfd4317ba315088a81558e55"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-115-400-normal.woff",
+          "blob_sha": "5a52b8f21f2a4e70735294e5c3031c3ecebb5339"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-116-400-normal.woff",
+          "blob_sha": "9192d9e56cb95a4882dd39238309695aad9eb500"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-117-400-normal.woff",
+          "blob_sha": "343c7821e53f98d18eae0ab6b304024a12738169"
+        },
         {
           "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-118-400-normal.woff",
           "blob_sha": "3cb59e2d1859a34d06392160bbee8b5648fbe568"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-119-400-normal.woff",
+          "blob_sha": "2266c35f157f5cc0427562de09e05006d0b2b11d"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-120-400-normal.woff",
+          "blob_sha": "1282886adb351657a3263318f130ccf5fa8a2026"
+        },
+        {
+          "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-121-400-normal.woff",
+          "blob_sha": "bdc536f9b090c927bd02056e546a90611052373f"
         },
         {
           "path": "fonts/google/noto-sans-tc/files/noto-sans-tc-122-400-normal.woff",
@@ -89,22 +352,29 @@
           "blob_sha": "f3cef38be943dd9ae45c4b352c8cc01d8a4a8a47"
         }
       ],
-      "license": "OFL-noto-sans-tc.txt"
+      "license": "OFL-noto-sans-tc.txt",
+      "bytes": 75552,
+      "sha256": "b291eca5849309c41b1ba81382ef739c9e8039ea06c2f35ca138238bffdda20b"
     },
     {
       "code": "th",
-      "family": "ECHO Language Labels TH",
-      "file": "EchoLabels-th.ttf",
-      "text": "ไทย",
-      "bytes": 1736,
-      "sha256": "2288e134a7d062a595400f451072bace040ef510821c3e7a3a757a0a50b0731d",
+      "family": "ECHO Menu Font TH",
+      "file": "EchoUI-th.ttf",
+      "extra_ranges": [
+        [
+          3585,
+          3675
+        ]
+      ],
       "sources": [
         {
           "path": "fonts/google/noto-sans-thai/files/noto-sans-thai-thai-400-normal.woff",
           "blob_sha": "4933fe4bf093ae4f1defe0907372bfc7561f79dc"
         }
       ],
-      "license": "OFL-noto-sans-thai.txt"
+      "license": "OFL-noto-sans-thai.txt",
+      "bytes": 17228,
+      "sha256": "82c861cd77c1acd5a0a2746f9a841c96dc07fb7a0bd5c4fe3b7781bf4c67fbe4"
     }
   ],
   "fonttools_version": "4.61.1"

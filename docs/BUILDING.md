@@ -37,7 +37,11 @@ ZIP timestamps, member order and permissions are fixed. The reproducibility
 check extracts the source archive into a clean directory, runs the build and
 compares both output archives byte-for-byte.
 
-The build validates the committed selector font subsets and includes them in the
+Each `ui/locales/<language-code>.json` contains all 88 menu strings. The build
+requires one file per registered language, matching English keys and format
+arguments. Mod-provided text uses the separate provider localization contract.
+
+The build validates the committed menu font subsets and includes them in the
 PAK. No font software or downloads are needed for normal builds. For optional
 regeneration, `ui/fonts/manifest.json` lists each pinned upstream WOFF input and
 the FontTools version. Download those files into one directory, install that
@@ -50,6 +54,12 @@ python tools/rebuild_language_fonts.py <input-directory>
 The regeneration tool verifies the original Git blobs and requires byte-identical
 subset outputs before replacing the committed fonts. OFL notices remain in
 `licenses/fonts/` and are copied into the install package.
+
+After an intentional translation change, missing glyphs fail the build. Update
+the pinned input list if the new characters need more WOFF chunks, then regenerate
+with `--update-manifest` and review the resulting font and manifest changes.
+The glyph subsets follow ECHO's own shipped text; provider strings do not expand
+them automatically.
 
 GitHub Actions runs tests and builds on `windows-latest`, uploading the installer,
 developer archive and checksums as `ECHO-Mod-Menu-Windows`. The workflow does not

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 — complete menu translations
+
+- Translate all 88 ECHO menu strings into the 14 selectable text languages.
+- Keep regional Spanish and Chinese translations in separate locale files.
+- Validate complete dictionaries and unchanged format arguments at build time.
+- Expand bundled fonts to cover every translated ECHO string and language name.
+- Inherit the selected font stack throughout the menu, with regional script
+  fallbacks and spacing for Asian text. Preserve mod-owned translation fallback.
+- Exercise all 14 selections without changing staged SDK values.
+
 ## 1.1.1 — selector font fix
 
 - Bundle small, renamed Noto subsets for Japanese, Korean, Simplified Chinese,

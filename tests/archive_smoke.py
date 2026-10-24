@@ -78,7 +78,7 @@ def main():
     from bl4_echo_mod_menu.resources import read_json
     from bl4_echo_mod_menu.scene import lifecycle as scene, native, queue_native
     assert metadata.distribution_info()['format'] == expected_format
-    assert metadata.distribution_info()['ui_revision'] == '1.1.1'
+    assert metadata.distribution_info()['ui_revision'] == '1.2.0'
     assert API_VERSION == 1 and queue_native._PROFILE['guards']
     cfg = read_json('bl4_echo_mod_menu.scene', 'config.json')
     assert scene.Session(sdk, None, settings/'scene.json', logs.append).config == cfg

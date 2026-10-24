@@ -89,8 +89,9 @@ Canonical map keys are `en`, `fr`, `it`, `de`, `es-es`, `ja`, `ko`, `pt-br`, `ru
 `zh-hans`, `th`, `zh-hant`, `pl` and `es-419`. Codes are case-insensitive and
 underscores are normalized to hyphens when the provider is read.
 Resolution is selected language, equivalent locale aliases, base language,
-English and explicit default/original SDK text. ECHO's own 1.1.1 test-build text
-is English/German; additional menu translations can be added independently.
+English and explicit default/original SDK text. ECHO's own menu text is translated
+into all 14 supported languages. Provider translations remain the author's own
+data and do not change stored values, setting identifiers or native game language.
 HTML markup is stripped; provider text is rendered with `textContent`.
 
 `choice_labels` maps actual stored choice strings to localized captions:

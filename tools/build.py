@@ -3,7 +3,8 @@ from pathlib import Path
 import ast,hashlib,importlib.util,json,shutil,zipfile
 from package_build import ROOT,SOURCE,MODULE,ARCHIVE_NAME,add_bytes,write_sdkmod,runtime_files,ordered_paths
 from pak_codec import read_pak,write_pak
-from font_validation import label_fonts, RESOURCE_PREFIX
+from font_validation import ui_fonts, RESOURCE_PREFIX
+from localization_data import load_translations
 PACKAGE=ROOT/'package'
 DIST=ROOT/'dist'
 PAK_NAME='zzz_BL4_ECHO_Mod_Menu_999_P.pak'
@@ -29,10 +30,9 @@ def write_native_tag_config():
     return rules.inspect_tag_config(PACKAGE)
 
 def build_ui():
-    translations=json.loads((ROOT/'ui/i18n.json').read_text(encoding='utf-8'))
-    assert set(translations['en'])==set(translations['de'])
+    translations=load_translations()
     languages=json.loads((MODULE/'languages.json').read_text(encoding='utf-8'))
-    fonts=label_fonts()
+    fonts=ui_fonts()
     assert len(languages)==len({row['code'] for row in languages})==14
     parts=[(ROOT/'ui'/n).read_text(encoding='utf-8') for n in ('transport.js','controller.js','language.js','editor.js','bootstrap.js')]
     extension='\n'.join(parts).replace('__ECHO_TRANSLATIONS__',json.dumps(translations,ensure_ascii=False,separators=(',',':')))

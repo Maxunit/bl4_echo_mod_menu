@@ -19,7 +19,7 @@ function fixture(managerFile) {
  vm.runInContext('class GbxCustomElement extends DomNode { constructor(){super("widget-list-menu");} Init(){} connectedCallback(){} }\n'+source('fixtures/native_input/widget_class_patch2.js')+'\nthis.NativeWidgetBase=WidgetBase;',ctx);
  vm.runInContext(source('fixtures/native_input/menu_base.js')+'\n'+source('fixtures/native_input/oak_menu_base.js')+'\nthis.NativeOakMenuBase=Widget_OakMenuBase;',ctx);
  vm.runInContext(source('fixtures/native_input/list_menu.js')+'\nthis.NativeListMenu=Widget_ListMenu;',ctx);
- vm.runInContext(source('../ui/controller.js')+'\n'+source('../ui/language.js').replace('__ECHO_LANGUAGES__',source('../src/bl4_echo_mod_menu/languages.json')).replace('__ECHO_LANGUAGE_FONTS__',JSON.stringify(JSON.parse(source('../ui/fonts/manifest.json')).fonts))+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',source('../ui/i18n.json')),ctx);
+ vm.runInContext(source('../ui/controller.js')+'\n'+require('./frontend_sources').languageScript+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',require('./frontend_sources').translationsText),ctx);
  ctx.InputMgr.Init();ctx.InputMgr.SimulateMouse=true;ctx.InputMgr.OnInputDeviceChanged(0,1,2,0);
  const actions=vm.runInContext('({up:INPUT_NAV_UP,down:INPUT_NAV_DOWN,left:INPUT_NAV_LEFT,right:INPUT_NAV_RIGHT,select:INPUT_NAV_SELECTED,pressed:InputActionType.PRESSED,released:InputActionType.RELEASED})',ctx);
  const trigger=ctx.engine.trigger;
@@ -455,8 +455,8 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  const draftBefore=JSON.stringify(lang.state.drafts),modelBefore=JSON.stringify(lang.widget.DataModel);
  open();assert.strictEqual(languages().length,14);
  const fontStyle=lang.doc.getElementById('echo-language-fonts');
- assert(fontStyle);assert.strictEqual((fontStyle.textContent.match(/@font-face/g)||[]).length,5);
- for(const font of JSON.parse(source('../ui/fonts/manifest.json')).fonts){
+ assert(fontStyle);assert.strictEqual((fontStyle.textContent.match(/@font-face/g)||[]).length,6);
+ for(const font of JSON.parse(source('../ui/fonts/manifest.json')).fonts.filter(row=>row.code!=='latin')){
   assert(fontStyle.textContent.includes('coui://uiresources/echo_mod_menu/fonts/'+font.file));
   assert(languages().find(n=>n.getAttribute('lang')===font.code).querySelector('.echo-language-name').style.cssText.includes(font.family));
  }
@@ -482,7 +482,7 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  assert.strictEqual(languageRequest.body.language,'fr');assert.strictEqual(lang.pending.length,0);
  lang.reply(languageRequest,{preferences:{language:'fr'}});
  assert.strictEqual(lang.state.preference,'fr');assert.strictEqual(lang.ctx.echoLanguage(lang.state),'fr');
- assert.strictEqual(lang.ctx.echoT(lang.state,'save'),'Save & Apply');
+ assert.strictEqual(lang.ctx.echoT(lang.state,'save'),require('./frontend_sources').translations.fr.save);
  assert.strictEqual(lang.state.root.querySelector('.echo-language-current').textContent,'Français');
  assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);cases++;
 
@@ -547,6 +547,36 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  lang.state.preference='zh-hant';assert.strictEqual(lang.ctx.echoModText(lang.state,localized,'name'),'繁體');
  lang.state.preference='ja';assert.strictEqual(lang.ctx.echoModText(lang.state,localized,'name'),'English');
  lang.ctx.echoDraw(lang.state);cases++;
+
+ // Every shipped locale is selected through the actual dropdown and native
+ // Confirm path. Translation and font changes must not rewrite an SDK draft.
+ const dictionaries=require('./frontend_sources').translations;
+ for(const locale of names){
+  open();
+  while(lang.state.controller.current!=='language-option:'+locale.code){
+   const wanted=names.findIndex(row=>row.code===locale.code);
+   const current=names.findIndex(row=>'language-option:'+row.code===lang.state.controller.current);
+   lang.tap(wanted<current?'up':'down');
+  }
+  lang.tap('select');
+  const request=lang.pending.shift();assert(request.url.endsWith('/preferences'));
+  assert.strictEqual(request.body.language,locale.code);
+  lang.reply(request,{preferences:{language:locale.code}});
+  assert.strictEqual(lang.state.root.querySelector('.echo-mode').textContent,dictionaries[locale.code].configuration);
+  assert.strictEqual(lang.state.saveButton.textContent,dictionaries[locale.code].save);
+  assert.strictEqual(lang.state.root.querySelector('.echo-session-hint').textContent,dictionaries[locale.code].sessionHint);
+  assert(lang.state.root.style.fontFamily.includes('ECHO Menu Font LATIN'));
+  if(['ja','ko','zh-hans','zh-hant','th'].includes(locale.code))assert(lang.state.root.style.fontFamily.includes('ECHO Menu Font '+locale.code.toUpperCase()));
+  assert.strictEqual(JSON.stringify(lang.state.drafts),draftBefore);
+  assert.strictEqual(lang.pending.length,0);assert.strictEqual(lang.state.epoch,'e1');
+  assert.strictEqual(lang.doc.getElementById('echo-language-fonts'),fontStyle);
+  cases++;
+ }
+ lang.state.preference='fr';const translatedSave=lang.ctx.echoTranslations.fr.save;
+ delete lang.ctx.echoTranslations.fr.save;
+ assert.strictEqual(lang.ctx.echoT(lang.state,'save'),dictionaries.en.save);
+ lang.ctx.echoTranslations.fr.save=translatedSave;
+ lang.state.preference='ja';lang.ctx.echoDraw(lang.state);
 
  // Native hide/deactivate, OS blur and redraw all relinquish the exact cancel
  // owner. Reopening never resurrects a popup or its detached row callbacks.
