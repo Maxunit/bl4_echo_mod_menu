@@ -23,6 +23,10 @@ tabs use the same behavior. If leading or trailing content would hide the
 selected row at an endpoint, keeping that row visible takes priority. Rows
 taller than the viewport keep their focused control visible instead.
 
+Preset buttons share one scroll row with their label and padding. Returning
+from the options reveals that complete row, including wrapped buttons,
+regardless of which preset is remembered or currently selected.
+
 Focus memories are scoped to mod/category. Hidden and disabled controls are
 skipped. Moving a real cursor returns to cursor operation and cancels an
 unfinished slider/choice preview. Window blur, hiding or deactivation also ends

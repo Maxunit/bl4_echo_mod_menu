@@ -2,7 +2,7 @@
  * attachment/lifecycle method. Never activate a tab or modify native models. */
 if (!window.EchoModMenu) {
     var viewClosed = false, materialDisabled = false;
-    window.EchoModMenu = {version:'1.2.3', diagnostics:function () { return clientEvents.slice(); }};
+    window.EchoModMenu = {version:'1.2.4', diagnostics:function () { return clientEvents.slice(); }};
     window.addEventListener('pagehide', function () { viewClosed = true; }, true);
     function playTransition(widget) {
         if (widget.IsActivated !== true || widget.IsInitialized !== true || viewClosed || materialDisabled) return;

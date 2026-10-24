@@ -302,6 +302,60 @@ for(const managerFile of ['input_manager_base.js','input_manager_patch2.js']) {
  presets.focus('value:mod1:offset');assert.strictEqual(presetPane.view.scrollTop,100);
  presets.focus('preset:mod1:camera:near');assert.strictEqual(presetPane.view.scrollTop,0);cases++;
 
+ // All presets form one labeled row. Returning from the bottom remembers
+ // the selected button, which may be the second/third rather than the first
+ // DOM target. Include wrapped buttons and an oversized-row fallback.
+ for(const [remembered,groupHeight,wideTop] of [
+  ['standard',95,100],['near',95,100],['wide',95,100],['wide',150,160],['wide',380,320]
+ ]){
+  const roundtrip=fixture(managerFile),presetMod=roundtrip.state.catalog.mods[0];
+  presetMod.options=presetMod.options.filter(item=>['offset','toggle','mode'].includes(item.id));
+  presetMod.categories[0].presets=[
+   {id:'standard',label:'Standard',values:{offset:3}},
+   {id:'near',label:'Near',values:{offset:4}},
+   {id:'wide',label:'Wide',values:{offset:8}}
+  ];
+  presetMod.options[0].value={standard:3,near:4,wide:8}[remembered];
+  roundtrip.ctx.echoDraw(roundtrip.state);
+  const firstOption=60+groupHeight+20,total=firstOption+3*110+35;
+  const viewport=roundtrip.state.paneCache['echo-settings'];
+  scrollGeometry(roundtrip,viewport,total,220);
+  scrollingBox(viewport.content.echoPresets,viewport,60,groupHeight);
+  for(const name of ['standard','near','wide'])
+   scrollingBox(roundtrip.target('preset:mod1:camera:'+name).node,viewport,name==='wide'?wideTop:100,32);
+  roundtrip.state.optionRows.forEach((item,index)=>scrollingBox(item.row,viewport,firstOption+index*110,100));
+  roundtrip.ctx.echoControllerTargets(roundtrip.state,'options').forEach(item=>{
+   const index=['offset','toggle','mode'].indexOf(item.row);
+   scrollingBox(item.node,viewport,firstOption+index*110+35,32);
+  });
+  const focusedPreset='preset:mod1:camera:'+remembered;
+  const drafts=JSON.stringify(roundtrip.state.drafts),saved=JSON.stringify(roundtrip.state.saved);
+  roundtrip.focus(focusedPreset);
+  for(let cycle=0;cycle<3;cycle++){
+   for(let step=0;step<3;step++)roundtrip.tap('down');
+   assert.strictEqual(roundtrip.state.controller.current,'value:mod1:mode');
+   assert.strictEqual(viewport.view.scrollTop,viewport.range);
+   for(let step=0;step<3;step++)roundtrip.tap('up');
+   assert.strictEqual(roundtrip.state.controller.current,focusedPreset);
+   const expectedTop=groupHeight<=220?0:wideTop+32-220;
+   assert.strictEqual(viewport.view.scrollTop,expectedTop);
+   const visibleBox=(groupHeight<=220?viewport.content.echoPresets:roundtrip.target(focusedPreset).node).getBoundingClientRect();
+   assert(visibleBox.top>=20&&visibleBox.bottom<=240);
+   roundtrip.ctx.echoControllerEnsureVisible(roundtrip.state);
+   assert.strictEqual(viewport.view.scrollTop,expectedTop);
+  }
+  if(groupHeight<=220){
+   roundtrip.focus('preset:mod1:camera:standard');
+   roundtrip.tap('right');roundtrip.tap('right');
+   assert.strictEqual(roundtrip.state.controller.current,'preset:mod1:camera:wide');
+   assert.strictEqual(viewport.view.scrollTop,0);
+  }
+  assert.strictEqual(JSON.stringify(roundtrip.state.drafts),drafts);
+  assert.strictEqual(JSON.stringify(roundtrip.state.saved),saved);
+  assert.strictEqual(JSON.stringify(roundtrip.widget.DataModel),roundtrip.modelBefore);
+  assert.strictEqual(roundtrip.pending.length,0);cases++;
+ }
+
  // Wrapped categories have their own native scroll viewport. Include its
  // outer padding at either end without selecting another category.
  const tabs=ends.state.regions.categories,tabTargets=ends.ctx.echoControllerTargets(ends.state,'categories');

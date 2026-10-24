@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.4 — restore the complete preset row
+
+- Treat all preset buttons, their shared label and container padding as one
+  scroll item, including when the buttons wrap onto multiple lines.
+- Returning from the last option to any remembered preset reveals the complete
+  preset row and reaches the scroll start when the leading section fits.
+- Reuse the same logical-row lookup for regular option controls and preserve
+  focused-button visibility when an unusually tall preset row cannot fit.
+- Check repeated bottom-to-top D-pad round trips for all three presets, wrapped
+  and oversized rows, horizontal navigation and unchanged drafts/native models.
+
 ## 1.2.3 — complete D-pad scroll bounds
 
 - Reveal the whole labeled option row when it fits in the viewport, including

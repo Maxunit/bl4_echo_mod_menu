@@ -158,18 +158,27 @@ function echoControllerPaint(state) {
     if (state.regions && state.regions.scrollHint) state.regions.scrollHint.textContent =
         echoT(state, nav.directional ? nav.edit ? 'controllerEdit' : 'controllerBrowse' : 'scrollHint');
 }
+function echoControllerScrollItem(target, content) {
+    var rowClass = target.region === 'options' ? 'echo-option-row' :
+        target.region === 'presets' ? 'echo-presets' : null;
+    if (rowClass) {
+        for (var node = target.node; node && node !== content; node = node.parentElement)
+            if (node.classList && node.classList.contains(rowClass)) return node;
+    }
+    return target.node;
+}
 function echoControllerScrollDestination(state, target, content, view, position, range) {
     var box = target.node.getBoundingClientRect(), viewport = view.getBoundingClientRect();
     var height = view.clientHeight || viewport.height, extent = box;
     if (!height || !box.height) return position;
-    // Numeric/keybind controls sit inside a larger labeled row. Reveal the
-    // entire row when it fits; otherwise keep the actual input visible.
-    (state.optionRows || []).forEach(function (item) {
-        if (target.region !== 'options' || !echoControllerContains(item.row, target.node)) return;
-        var row = item.row.getBoundingClientRect();
+    // Option controls and preset buttons share larger labeled rows. Reveal
+    // the complete row when it fits; otherwise keep the actual input visible.
+    var item = echoControllerScrollItem(target, content);
+    if (item !== target.node) {
+        var row = item.getBoundingClientRect();
         if (row.height > 0 && row.height <= height && row.top <= box.top + 1 &&
             row.top + row.height >= box.top + box.height - 1) extent = row;
-    });
+    }
     var top = extent.top, bottom = top + extent.height, limit = viewport.top + height;
     // An oversized control already covering the viewport cannot fit at both
     // edges. Retain its position instead of alternating between alignments.
@@ -178,10 +187,10 @@ function echoControllerScrollDestination(state, target, content, view, position,
     var destination = position + delta;
     var entries = echoControllerTargets(state).filter(function (entry) { return echoControllerContains(content, entry.node); });
     function sameItem(entry) {
-        return entry && (entry.id === target.id || target.region === 'options' && target.key && entry.key === target.key);
+        return entry && echoControllerScrollItem(entry, content) === item;
     }
-    // Include leading/trailing spacing at the ends. All controls of an
-    // option count as one item, even when Minus or Plus has native focus.
+    // Include leading/trailing spacing at the ends. All controls within an
+    // option or preset row count as one item, regardless of the focused button.
     var edge = sameItem(entries[0]) ? 0 : sameItem(entries[entries.length - 1]) ? range : null;
     if (edge !== null && extent.height <= height) {
         // Long headings or read-only tails can make an exact endpoint hide
