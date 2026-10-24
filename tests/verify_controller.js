@@ -20,7 +20,7 @@ function fixture(managerFile) {
  vm.runInContext('class GbxCustomElement extends DomNode { constructor(){super("widget-list-menu");} Init(){} connectedCallback(){} }\n'+source('fixtures/native_input/widget_class_patch2.js')+'\nthis.NativeWidgetBase=WidgetBase;',ctx);
  vm.runInContext(source('fixtures/native_input/menu_base.js')+'\n'+source('fixtures/native_input/oak_menu_base.js')+'\nthis.NativeOakMenuBase=Widget_OakMenuBase;',ctx);
  vm.runInContext(source('fixtures/native_input/list_menu.js')+'\nthis.NativeListMenu=Widget_ListMenu;',ctx);
- vm.runInContext(source('../ui/controller.js')+'\n'+require('./frontend_sources').languageScript+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',require('./frontend_sources').translationsText),ctx);
+ vm.runInContext(source('../ui/controller.js')+'\n'+require('./frontend_sources').languageScript+'\n'+require('./frontend_sources').visualsScript+'\n'+source('../ui/editor.js').replace('__ECHO_TRANSLATIONS__',require('./frontend_sources').translationsText),ctx);
  ctx.InputMgr.Init();ctx.InputMgr.SimulateMouse=true;ctx.InputMgr.OnInputDeviceChanged(0,1,2,0);
  const actions=vm.runInContext('({up:INPUT_NAV_UP,down:INPUT_NAV_DOWN,left:INPUT_NAV_LEFT,right:INPUT_NAV_RIGHT,select:INPUT_NAV_SELECTED,pressed:InputActionType.PRESSED,released:InputActionType.RELEASED})',ctx);
  const trigger=ctx.engine.trigger;

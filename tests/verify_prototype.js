@@ -7,6 +7,7 @@ assert.deepStrictEqual(Object.keys(dictionary.en).sort(),Object.keys(dictionary.
 let source=fs.readFileSync(path.join(__dirname,'../ui/editor.js'),'utf8').replace('__ECHO_TRANSLATIONS__',JSON.stringify(dictionary));
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../ui/controller.js'),'utf8'),ctx);
 vm.runInContext(require('./frontend_sources').languageScript,ctx);
+vm.runInContext(require('./frontend_sources').visualsScript,ctx);
 vm.runInContext(source,ctx);
 function chooseLanguage(state,code){
  state.root.querySelector('.echo-language-trigger').click();

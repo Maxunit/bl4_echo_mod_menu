@@ -95,3 +95,8 @@ attribute should leave your ordinary SDK options available automatically.
 
 See [troubleshooting](API.md#troubleshooting-an-integration) for fallback status,
 missing translations, read-only settings and stale drafts after a reload.
+
+## Optional icons and logos
+
+See [artwork declarations](ARTWORK.md) for `mod.echo_menu_artwork`, available
+independently of the provider in 1.3.0. A bad image does not reject your settings.

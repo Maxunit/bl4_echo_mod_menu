@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.0 — icons and optional mod artwork (in-game test build)
+
+- Bundle 20 pinned Tabler icons and an ECHO mark as PNG resources, with their
+  original SVG sources and MIT attribution. Normal builds stay dependency-free.
+- Add decorative mod/category/language/action icons without new focus targets.
+- Support optional `mod.echo_menu_artwork` independently of provider API v1,
+  including built-in or PNG mod icons, category icons and PNG headers.
+- Read bounded resources from already loaded folder/SDKMOD packages at capture;
+  serve captured bytes through the current inventory session's loopback service.
+- Preserve drafts and editors while images load; discard stale responses and
+  fall back when artwork is missing, rejected or cannot be decoded.
+- Include a separate optional TPS artwork overlay for the v100.3 integration,
+  preserving the supplied transparent TPS logo byte-for-byte.
+- Keep the native scene, animation/background and existing setting-write path.
+- Actual Cohtml icon/logo rendering and transparency await in-game validation.
+
 ## 1.2.4 — restore the complete preset row
 
 - Expand the API guide with a level-selection table and complete Level 2/3

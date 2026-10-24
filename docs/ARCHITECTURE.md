@@ -61,3 +61,13 @@ The SDK settings directory owns mod values. ECHO keeps only language preferences
 and temporary/queued drafts. Diagnostic files are opt-in (or produced on errors).
 The local transport binds to `127.0.0.1`; its fixed protocol marker is not a secret
 or an authorization replacement. Mod setters retain their own authority checks.
+
+## Presentation assets
+
+`integration/artwork.py` captures bounded PNG resources on the game thread,
+independently of provider validity. The loopback worker receives bytes keyed by
+content hash and checks the active inventory epoch; it never resolves package
+paths. `ui/visuals.js` owns decorative icons, shared image requests and stale
+response cancellation. Image completion updates only existing image nodes.
+Committed SVG/PNG provenance is validated by `tools/icon_validation.py` and
+`icons.json`. No new native hooks, gameplay writes, timers or polling are added.

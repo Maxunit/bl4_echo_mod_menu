@@ -6,6 +6,7 @@ import struct
 from pathlib import Path
 
 ENTRY = struct.Struct("<QQQI20sBI")
+MAX_FILES = 256
 
 
 def fstring(value):
@@ -33,7 +34,7 @@ def read_pak(data):
     stream = io.BytesIO(index)
     assert read_string(stream) == "../../../"
     count, = struct.unpack("<i", stream.read(4))
-    assert 0 < count <= 10
+    assert 0 < count <= MAX_FILES
     files = {}
     for _ in range(count):
         name = read_string(stream)
@@ -52,6 +53,8 @@ def read_pak(data):
 
 
 def write_pak(files):
+    if not 0 < len(files) <= MAX_FILES:
+        raise ValueError('PAK resource count outside the supported build limit')
     content = bytearray()
     index = bytearray(fstring("../../../") + struct.pack("<i", len(files)))
     for name, payload in sorted(files.items()):

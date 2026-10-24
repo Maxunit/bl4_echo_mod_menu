@@ -48,3 +48,8 @@ menus, multilingual text rendering, language switching, D-pad/Confirm/Cancel,
 slider editing and bottom-to-top navigation through the camera presets.
 Screen formats and controller hardware beyond the tested setup are
 not implied by the offline DOM fixtures.
+
+
+Version 1.3.0 extends that 1.2.4 baseline with decorative icons and optional PNG
+artwork. Its native rendering/transparency have not yet been confirmed in BL4.
+The optional TPS overlay is pinned to the integration in the v100.3 bundle.

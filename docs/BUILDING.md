@@ -18,6 +18,12 @@ original game input managers/menu classes, field editing, capture, focus, scroll
 translations and provider declarations. Controller coverage includes the original
 registered ListMenu lifecycle, repeated reopen cycles and instance replacement.
 
+Artwork checks cover PNG structure/limits, folder and SDKMOD resources, package
+ownership, exact-byte loopback transfer, stale requests and decorative focus
+identity. Icons are committed PNGs; hashes, dimensions and original SVG sources
+are checked without image-library dependencies. The optional TPS overlay is
+validated against its pinned integration and unchanged logo hashes.
+
 The native C++ boundary, physical input delivery, DOM geometry and Cohtml renderer
 are modeled. Offline tests do not certify native execution or in-game pixels.
 
@@ -26,7 +32,8 @@ external tag INI, optional example SDKMODs, English docs and checksums. Outputs:
 
 - `package/`: ready-to-install layout tracked for direct access.
 - `dist/ECHO_Mod_Menu_<version>.zip`: complete install package.
-- `dist/ECHO_Mod_Menu_<version>_sources.zip`: portable developer source tree.
+- `dist/ECHO_Mod_Menu_<version>_sources.zip`: portable developer source tree,
+  including the matching `package/` folder for a complete manual repository upload.
 - `dist/SHA256SUMS.txt`: archive checksums.
 
 Build instructions and architecture notes are included in the developer archive.

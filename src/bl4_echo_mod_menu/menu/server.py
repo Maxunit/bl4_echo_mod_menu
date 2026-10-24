@@ -1,6 +1,7 @@
 """Bounded, event-driven UI service. The HTTP worker never accesses the SDK."""
 from __future__ import annotations
 import json
+import base64
 import os
 import socket
 from datetime import datetime, timezone
@@ -35,6 +36,7 @@ class MenuService:
         self.lock = Lock()
         self.stopping = Event()
         self.catalog = {'mods': [], 'status': 'not_ready', 'errors': []}
+        self.artwork = {}
         self.mailbox = Mailbox()
         self.preferences_path = None
         self.preferences = {'language': 'auto'}
@@ -127,6 +129,23 @@ class MenuService:
         except Rejected as error:
             return 409, {'ok': False, 'service': SERVICE, 'code': str(error)}
 
+    def receive_artwork(self, body):
+        """Serve only bytes captured by the game thread for this open session."""
+        if not isinstance(body, dict) or body.get('token') != BUILD_TOKEN:
+            return 403, {'ok': False, 'service': SERVICE}
+        with self.mailbox.lock:
+            if not self.mailbox.active or body.get('epoch') != self.mailbox.epoch:
+                return 409, {'ok': False, 'service': SERVICE}
+        asset_id = body.get('id')
+        if type(asset_id) is not str or len(asset_id) != 64:
+            return 404, {'ok': False, 'service': SERVICE}
+        with self.lock:
+            data = self.artwork.get(asset_id)
+        if data is None:
+            return 404, {'ok': False, 'service': SERVICE}
+        return 200, {'ok': True, 'service': SERVICE, 'id': asset_id,
+                     'data_url': 'data:image/png;base64,' + base64.b64encode(data).decode('ascii')}
+
     def receive_preferences(self, body):
         if not isinstance(body, dict) or body.get('token') != BUILD_TOKEN:
             return 403, {'ok': False, 'service': SERVICE}
@@ -186,7 +205,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if self.server.owner.stopping.is_set():
                 return self.reply(503,{'ok':False,'service':SERVICE})
-            if self.path not in {PREFIX+'/event', PREFIX+'/catalog', PREFIX+'/stage', PREFIX+'/preferences'}:
+            if self.path not in {PREFIX+'/event', PREFIX+'/catalog', PREFIX+'/stage', PREFIX+'/preferences', PREFIX+'/artwork'}:
                 return self.reply(404,{'ok':False,'service':SERVICE})
             if self.headers.get('Transfer-Encoding') is not None:
                 return self.reply(400,{'ok':False,'service':SERVICE})
@@ -198,7 +217,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply(400,{'ok':False,'service':SERVICE})
             value = json.loads(raw,parse_constant=lambda _: (_ for _ in ()).throw(ValueError('Nonfinite JSON')))
             handlers = {'/catalog': self.server.owner.receive_catalog, '/event': self.server.owner.receive,
-                        '/stage': self.server.owner.receive_stage, '/preferences': self.server.owner.receive_preferences}
+                         '/stage': self.server.owner.receive_stage, '/preferences': self.server.owner.receive_preferences,
+                         '/artwork': self.server.owner.receive_artwork}
             status, result = handlers[self.path[len(PREFIX):]](value)
             self.reply(status,result)
         except (ValueError,UnicodeError,RecursionError):

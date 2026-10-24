@@ -1,0 +1,139 @@
+{
+  "upstream": "https://github.com/tabler/tabler-icons",
+  "tag": "v3.46.0",
+  "commit": "8ac7d81b72ece11072ef25ea9fd92e80c6f3c9fc",
+  "raster": {
+    "width": 96,
+    "height": 96,
+    "color": "#9bdcea",
+    "generator": "Sharp 0.35.5"
+  },
+  "icons": [
+    {
+      "id": "activity",
+      "source": "tabler",
+      "svg_sha256": "9c0e12107fec6a53556f0c3293013f1b7a8509fb35000e42ea856a0667e61309",
+      "png_sha256": "8ad3a9762b3aa803e1404535a8f98613f98bb4b2ad20a9fe2f7a82bfd03a0f94"
+    },
+    {
+      "id": "adjustments-horizontal",
+      "source": "tabler",
+      "svg_sha256": "66b3be63d0ae4f75c6707ac802ef2bad9eb5f9c0af9ab77c7a1f9c7f1694a178",
+      "png_sha256": "8375c772559500f29cd0f38f31e664939e3bc0e92e953e9f57330b91002f45f9"
+    },
+    {
+      "id": "alert-triangle",
+      "source": "tabler",
+      "svg_sha256": "fc82f02dc9702293cb8609a8aed3242c0fe5f5b3337d79d341aa9343b4526ad4",
+      "png_sha256": "6f7dea197e0d6b11857b03d60d34810fe0d67541295de4533b599a97862a5db9"
+    },
+    {
+      "id": "camera",
+      "source": "tabler",
+      "svg_sha256": "24c3560560e6177528dada3805efab129c5667ef97b0ea342a21d0a34032baa8",
+      "png_sha256": "b3b88846215b16daf1977d7cd1ff947e7a1ea919ba3b8901d108311d8fb553ba"
+    },
+    {
+      "id": "car",
+      "source": "tabler",
+      "svg_sha256": "c95af3091f703f3badf544aa54def72eb60238780932451669fa91d566beb186",
+      "png_sha256": "fb8c7adb2019cef5665600f643eb4e45994824d6328de698025bfe464becb7a2"
+    },
+    {
+      "id": "check",
+      "source": "tabler",
+      "svg_sha256": "fe359b27c74ed0f4f72bfabbe5ca969a8bb13a5f39648bae63f9e798034ebed3",
+      "png_sha256": "894814d4dd2b9dea2310b4a1686d1c86471ec3cb7d8ad2280b992c4ff5cbb13a"
+    },
+    {
+      "id": "compass",
+      "source": "tabler",
+      "svg_sha256": "eafd654df183a65093927782834e3900cdb7c5d4d8b898fe25ef15bb06dee8a8",
+      "png_sha256": "32d2fdc1f39e0b0a051b3a435888a2825b4865372bd0ee057856b8eb1bdcc4f0"
+    },
+    {
+      "id": "device-floppy",
+      "source": "tabler",
+      "svg_sha256": "3d15c3ac1b682a4a0ec9878ea94ecb4c2144bc16f8be6ba4e6e4c8fd140f101b",
+      "png_sha256": "73c90100cf83511be2dd91af7138791a46079af49f9bbe114d9d8a14eafc3b0e"
+    },
+    {
+      "id": "device-gamepad",
+      "source": "tabler",
+      "svg_sha256": "a2591eec1e15bbe8740ad349260c838abe55994e358030b3e5fec09b9a111682",
+      "png_sha256": "d29f50fac3904e9d9a52862cb428a6e1e011c5420587a946476be57271ffc289"
+    },
+    {
+      "id": "echo",
+      "source": "echo",
+      "svg_sha256": "6d82976377e64837dec87e4ade5f334a249fffdb7d9deaa423df0cf9024bf72c",
+      "png_sha256": "2c91ccd27e6bbc5094524d072caccf5a974faba5b13b7d36532ea44115a0649d"
+    },
+    {
+      "id": "info-circle",
+      "source": "tabler",
+      "svg_sha256": "8bb2ea8aa6e56cab6137f44a0b1a1eabeab526b7f96ea8be36d583868a737562",
+      "png_sha256": "ee8de7f70d73169a9ed4886ae8676419a882c00f417fa1453040242adbf2c6f4"
+    },
+    {
+      "id": "keyboard",
+      "source": "tabler",
+      "svg_sha256": "8dcb52240a7f121651455a0a71322cb306c7e4695c70b4a9c14c453dc231c5da",
+      "png_sha256": "2eab53006d3f5b8217f9bb796508e91cc4ce375ea4169d1524f7a9fd142bd33f"
+    },
+    {
+      "id": "language",
+      "source": "tabler",
+      "svg_sha256": "b18466cfbbcd90126e80c3805f9b247423ac82d24633e9715b6e0a66f8127d90",
+      "png_sha256": "358e6594a774c92ae04982dd281d988b9b30eb6451e9e16d784618d31fb626bf"
+    },
+    {
+      "id": "power",
+      "source": "tabler",
+      "svg_sha256": "2219766eddc754bcf2a21ff4f9170323a01db70d65e9af69851390d9d3db4fff",
+      "png_sha256": "de518e5caa5df511f84d7137d36498157a19e744b3804a20de31892f50b68642"
+    },
+    {
+      "id": "puzzle",
+      "source": "tabler",
+      "svg_sha256": "273a4bc70e666a92a219fe90c856cb4a1b6860705faf54a1f73c693570f99a41",
+      "png_sha256": "33bb20ec173f9ee217a9ad80e7dca02b7fad425f46d78183f25ec0f345590b2a"
+    },
+    {
+      "id": "restore",
+      "source": "tabler",
+      "svg_sha256": "6dbc3eed31812bf6ca30ba3d9b8802db71fddeace397288162cbec00e99b3de7",
+      "png_sha256": "4439e1aa009c099558261d47dc5d12d24a19bb3afa66972ce405fd498e5a88cf"
+    },
+    {
+      "id": "run",
+      "source": "tabler",
+      "svg_sha256": "fd43f9f69aaf903c233d9826be5c1e4153857590f74f9442bcd333737f5743e7",
+      "png_sha256": "203aa058b4eb56e39edf0714c64de97379f17430954a7c6db20c51ef76e815a9"
+    },
+    {
+      "id": "search",
+      "source": "tabler",
+      "svg_sha256": "e579b69a4b978f702908a48b1bef74d9ac73df4679cb1a6074c567bec2748c41",
+      "png_sha256": "e59e80d57717c54c98adf38afc820a524a5fab25e72d3f0a049641cae6aec7f1"
+    },
+    {
+      "id": "settings",
+      "source": "tabler",
+      "svg_sha256": "d71136dfd83ad19efe1777d01768a5d23d7b295de5dde3b1fccc50806809a423",
+      "png_sha256": "c1f43b7fb4d2bc887c1211e7419c98db1c17e5090a0cccb7718bc4733eea91ee"
+    },
+    {
+      "id": "target",
+      "source": "tabler",
+      "svg_sha256": "86aeb93cca8fdd443836de446a3fc565c45f5af5e7312171c1d054f14da1388e",
+      "png_sha256": "c2617525d3c847d9b62aa45527a9b68ae0882c9891492b9aee1c8baecab1781d"
+    },
+    {
+      "id": "trash",
+      "source": "tabler",
+      "svg_sha256": "28587eb685afab185034d3fe0e192000a38a4f384e5de8c5c6da2512991d89ff",
+      "png_sha256": "a8621017724941732642488969593a12d09f382f2427037db0d13a516cab59e0"
+    }
+  ]
+}

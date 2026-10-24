@@ -11,3 +11,4 @@ mod = build_mod(
     options=[], keybinds=[], hooks=[], commands=[],
     on_enable=enable, on_disable=stop,
 )
+mod.echo_menu_artwork = {'icon': 'echo'}
