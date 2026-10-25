@@ -48,3 +48,16 @@ menus, multilingual text rendering, language switching, D-pad/Confirm/Cancel,
 slider editing and bottom-to-top navigation through the camera presets.
 Screen formats and controller hardware beyond the tested setup are
 not implied by the offline DOM fixtures.
+
+
+Version 1.3.0 extends that 1.2.4 baseline with decorative icons and optional PNG
+artwork. Its first in-game screenshots exposed misplaced icons, an overflowing
+language toolbar and distorted headers. Version 1.3.1 corrects those layouts
+without CSS `order` or `object-fit`, which Cohtml does not support. The user's
+1.3.1 in-game screenshot confirms the corrected icon placement, language toolbar
+and proportional TPS logo. The user also confirmed 1.3.2's centered placement.
+Version 1.3.3 moves the retained mod header above category tabs and removes the
+duplicate category heading. The new layout has offline coverage and still
+requires in-game visual validation.
+Offline geometry remains modeled.
+The optional TPS overlay is pinned to the integration in the v100.3 bundle.

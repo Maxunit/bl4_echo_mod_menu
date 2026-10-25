@@ -44,11 +44,13 @@ function echoFlushScrollLayout(state) {
     try {
         if (typeof engine !== 'undefined' && typeof engine.executeImmediateLayoutSync === 'function') {
             engine.executeImmediateLayoutSync(); settled = true;
+            if (echoArtworkFitHeaders(state)) engine.executeImmediateLayoutSync();
         }
     } catch (error) {
         if (!state.layoutError) { state.layoutError = short(error); record('scroll_layout_error', {error:state.layoutError}); }
     }
     state.layoutMode = settled ? 'batch_immediate_layout' : typeof ResizeObserver === 'function' ? 'resize_observer' : 'await_input';
+    if (!settled) echoArtworkFitHeaders(state);
     if (settled) state.scrollPanes.forEach(function (pane) { echoSyncScroll(pane, true); });
 }
 function echoScrollTo(pane, value) {
@@ -102,7 +104,7 @@ function echoScrollPane(state, parent, key, cls, padding) {
     });
     if (typeof ResizeObserver === 'function') {
         try {
-            pane.observer = new ResizeObserver(function () { echoSyncScroll(pane, true); });
+            pane.observer = new ResizeObserver(function () { echoArtworkFitHeaders(state); echoSyncScroll(pane, true); });
             pane.observer.observe(view); pane.observer.observe(content); pane.observer.observe(pane.track);
         } catch (error) {
             if (pane.observer) pane.observer.disconnect();
@@ -201,11 +203,6 @@ function echoAtmosphere(root) {
         echoNode(atmosphere, 'div', null, 'echo-frame-corner', 'position:absolute;width:2.5rem;height:2.2rem;opacity:0.75;pointer-events:none;' + style);
     });
 }
-function echoModSymbol(mod) {
-    var words = String(mod.name || '').replace(/[^a-zA-Z0-9 ]/g, ' ').split(/\s+/).filter(function (word) { return word && !/^(bl4|the|of|a|and)$/i.test(word); });
-    var symbol = words.map(function (word) { return word.charAt(0); }).join('').slice(0,4).toUpperCase();
-    return symbol || 'MOD';
-}
 function echoKey(command) { return command.kind + ':' + command.mod + ':' + (command.option || ''); }
 function echoCopy(value) { return JSON.parse(JSON.stringify(value)); }
 function echoMap(commands) { var result = {}; (commands || []).forEach(function (c) { result[echoKey(c)] = echoCopy(c); }); return result; }
@@ -279,6 +276,7 @@ function echoRequest(state, route, value, success) {
     } catch (_) { done('backendError'); }
 }
 function echoAdopt(state, reply, preserve) {
+    if (reply.epoch !== state.epoch) echoArtworkReset(state);
     var keep = preserve && reply.epoch === state.epoch && (echoDirty(state) > 0 || Object.keys(state.invalid).length > 0);
     if (reply.epoch !== state.epoch) state.message = '';
     state.catalog = reply.catalog; state.active = reply.active; state.epoch = reply.epoch;
@@ -464,7 +462,7 @@ function echoNumericEditor(state, parent, mod, option) {
             if (commit()) {
                 remember(); state.textEnterConfirmed = (state.textEnterConfirmed || 0) + 1;
                 if (state.textEnterConfirmed <= 16) record('editor_text_confirmed', {
-                    layout_revision:'1.2.4', dom_focus:document.activeElement === input,
+                    layout_revision:'1.3.3', dom_focus:document.activeElement === input,
                     native_focus:!!state.nativeTextInput && state.nativeTextInput.input === input,
                     key_shape:event.code || (event.keyCode === 13 || event.which === 13 ? 'code13' : 'Enter')});
             }
@@ -873,6 +871,7 @@ function echoSyncPanelVisibility(state, reason) {
     state.root.style.display = allowed ? 'flex' : 'none';
     state.root.style.pointerEvents = allowed ? 'auto' : 'none';
     if (wasVisible && !allowed) {
+        echoArtworkReset(state);
         echoControllerSuspend(state);
         ++state.generation; state.busy = false;
         echoEditorDrag = null; echoScrollDrag = null;
@@ -902,12 +901,15 @@ function echoDraw(state) {
     var root = state.content;
     if (!state.regions) { state.regions = {}; echoAtmosphere(root); }
     var header = echoRegion(state, root, 'header', '', 'position:absolute;left:4.15%;right:4.15%;top:2.6rem;height:8rem;flex-direction:row;justify-content:space-between;border-bottom:1px solid #286078;z-index:70;overflow:visible;', true);
-    var titles = echoNode(header, 'div');
-    echoText(titles, echoT(state, 'eyebrow'), '', 'font-size:1.1rem;letter-spacing:0.2rem;color:#648c9a;');
+    var titles = echoNode(header, 'div', null, 'echo-heading', 'width:30%;flex-shrink:1;overflow:hidden;');
+    var brand = echoNode(titles, 'div', null, '', 'flex-direction:row;align-items:center;');
+    echoIcon(brand, 'echo', '1.4rem');
+    echoText(brand, echoT(state, 'eyebrow'), '', 'width:auto;flex-shrink:1;white-space:nowrap;flex-wrap:nowrap;font-size:1.1rem;letter-spacing:0.2rem;color:#648c9a;');
     echoText(titles, echoT(state, 'mods'), '', 'font-size:4rem;font-style:' + (['ja','ko','zh-hans','zh-hant','th','ru'].indexOf(echoLanguage(state)) >= 0 ? 'normal' : 'italic') + ';color:#38add4;margin-top:0.4rem;');
-    var languages = echoNode(header, 'div', null, '', 'flex-direction:row;align-items:center;');
-    echoText(languages, echoT(state, 'configuration'), 'echo-mode', 'width:auto;font-size:1.1rem;letter-spacing:0.1rem;padding:0.8rem 1rem;margin-right:2rem;border-left:2px solid #c17e24;color:#d7b071;background-color:rgba(28,31,26,0.5);');
-    echoText(languages, echoT(state, 'language'), '', 'width:auto;font-size:1.2rem;margin-right:1rem;color:#7393a2;');
+    var languages = echoNode(header, 'div', null, 'echo-language-toolbar', 'position:absolute;right:0;top:0;width:70%;height:100%;flex-direction:row;align-items:center;justify-content:flex-end;overflow:visible;');
+    echoText(languages, echoT(state, 'configuration'), 'echo-mode', 'width:auto;white-space:nowrap;flex-wrap:nowrap;font-size:1.1rem;letter-spacing:0.1rem;padding:0.8rem 1rem;margin-right:2rem;border-left:2px solid #c17e24;color:#d7b071;background-color:rgba(28,31,26,0.5);');
+    echoIcon(languages, 'language', '1.5rem');
+    echoText(languages, echoT(state, 'language'), '', 'width:auto;white-space:nowrap;flex-wrap:nowrap;font-size:1.2rem;margin-right:1rem;color:#7393a2;');
     echoLanguageRender(state, languages);
     echoFixedText(state, root, 'hint', echoT(state, 'hint'), '', 'position:absolute;left:4.15%;right:4.15%;top:11.8rem;width:auto;font-size:1.3rem;color:#90aab3;');
     echoFixedText(state, root, 'sessionHint', echoT(state, 'sessionHint'), 'echo-session-hint', 'position:absolute;left:4.15%;right:4.15%;top:14.3rem;width:auto;padding-left:1.2rem;border-left:0.3rem solid #267c99;font-size:1.2rem;color:#6196a8;');
@@ -930,10 +932,11 @@ function echoDraw(state) {
             var palette = targetPalette;
             card = state.modCards[mod.id] = echoControllerButton(state, modList, 'mod:' + mod.id, 'mods', '', function () { state.selected = mod.id; state.category = state.controller.categories[mod.id] || ''; echoDraw(state); record('editor_mod_selected', {id: mod.id}); }, picked, 'width:100%;height:12.8rem;min-height:12.8rem;overflow:hidden;margin:0 0 1rem 0;padding:1.1rem 1rem;flex-direction:column;align-items:flex-start;text-align:left;border-left:0.3rem solid ' + palette.border + ';clip-path:polygon(0 0,100% 0,100% 94%,96% 100%,0 100%);', false, palette);
             card.echoPalette = palette;
-            var cardMeta = echoNode(card, 'div', null, '', 'width:100%;height:2rem;flex-direction:row;align-items:center;justify-content:space-between;margin-bottom:0.5rem;');
-            card.echoSymbol = echoText(cardMeta, '', 'echo-mod-symbol', 'width:auto;font-size:1rem;letter-spacing:0.12rem;border:1px solid ' + palette.border + ';padding:0.2rem 0.4rem;');
+            var cardMeta = echoNode(card, 'div', null, '', 'width:100%;height:2rem;flex-direction:row;align-items:center;justify-content:flex-end;margin-bottom:0.5rem;');
             card.echoVersion = echoText(cardMeta, '', '', 'width:auto;max-width:65%;overflow:hidden;white-space:nowrap;font-size:1rem;');
-            card.echoName = echoText(card, '', '', 'height:4.4rem;overflow:hidden;font-size:1.75rem;');
+            var identity = echoNode(card, 'div', null, 'echo-mod-identity', 'width:100%;height:4.4rem;flex-direction:row;align-items:center;');
+            card.echoSymbol = echoModIcon(state, identity, mod);
+            card.echoName = echoText(identity, '', 'echo-mod-name', 'width:auto;flex:1;flex-shrink:1;max-height:4.4rem;overflow:hidden;font-size:1.75rem;');
             card.echoStatus = echoText(card, '', 'echo-mod-state', 'font-size:1.1rem;margin-top:0.35rem;');
         }
         Object.keys(card.echoPalette).forEach(function (key) { card.echoPalette[key] = targetPalette[key]; });
@@ -946,11 +949,12 @@ function echoDraw(state) {
         card.echoControllerTarget.preferred = picked;
         var cardClass = 'echo-mod-card ' + (mod.enabled === false ? 'echo-mod-off' : mod.enabled === true ? 'echo-mod-on' : 'echo-mod-unknown') + (picked ? ' echo-mod-selected' : '');
         if (card.className !== cardClass) card.className = cardClass;
-        [[card.echoSymbol, echoModSymbol(mod), targetPalette.status], [card.echoVersion, mod.version, targetPalette.muted], [card.echoName, echoModText(state, mod, 'name'), targetPalette.text], [card.echoStatus, echoT(state, mod.enabled === true ? 'on' : mod.enabled === false ? 'off' : 'unknown'), targetPalette.status]].forEach(function (entry) {
+        [[card.echoVersion, mod.version, targetPalette.muted], [card.echoName, echoModText(state, mod, 'name'), targetPalette.text], [card.echoStatus, echoT(state, mod.enabled === true ? 'on' : mod.enabled === false ? 'off' : 'unknown'), targetPalette.status]].forEach(function (entry) {
             if (entry[0].textContent !== String(entry[1])) entry[0].textContent = entry[1];
             echoScrollStyle(entry[0], 'color', entry[2]);
         });
-        echoScrollStyle(card.echoSymbol, 'borderColor', targetPalette.border);
+        echoScrollStyle(card.echoSymbol, 'opacity', mod.enabled === false ? '0.6' : '1');
+        echoModIconUpdate(state, card.echoSymbol, mod);
         var preview = echoStatusPreview(state, mod);
         if (preview) {
             if (!card.echoPreview) card.echoPreview = echoText(card, preview, 'echo-mod-preview', 'font-size:1rem;color:#e3c58e;margin-top:0.4rem;');
@@ -977,27 +981,31 @@ function echoDraw(state) {
     if ((state.catalog.errors || []).length) echoText(modDetails, echoT(state, 'catalogPartial'), '', 'font-size:1.1rem;color:#d7b071;margin-top:1rem;');
     var content = echoRegion(state, body, 'editor', 'echo-editor', 'flex:1;flex-shrink:1;height:100%;margin-left:2.7rem;');
     if (selected) {
+        var modHeader = echoRegion(state, content, 'modHeader', 'echo-mod-header', 'width:100%;');
+        echoModHeader(state, modHeader, selected);
         var categories = selected.categories.concat([{id:'__info', label_key:'info'}]);
         if (!categories.some(function (c) { return c.id === state.category; })) state.category = categories[0].id;
         state.controller.categories[selected.id] = state.category;
         var rememberedMods = Object.keys(state.controller.categories); if (rememberedMods.length > 128) delete state.controller.categories[rememberedMods[0]];
-        var tabs = echoRegion(state, content, 'categories', 'echo-categories', 'min-height:4.5rem;max-height:12rem;overflow:auto;width:100%;flex-direction:row;flex-wrap:wrap;padding-bottom:0.6rem;border-bottom:1px solid #2a586c;', true);
+        state.visibleOptions = selected.options.filter(function (o) { return o.category === state.category && echoModCondition(state, selected, o.visible_when); });
+        var categoryBar = echoRegion(state, content, 'categoryBar', 'echo-category-bar', 'width:100%;flex-direction:row;align-items:center;border-bottom:1px solid #2a586c;');
+        categoryBar.style.display = 'flex';
+        var tabs = echoRegion(state, categoryBar, 'categories', 'echo-categories', 'flex:1;flex-shrink:1;min-height:4.5rem;max-height:12rem;overflow:auto;flex-direction:row;flex-wrap:wrap;padding-bottom:0.6rem;', true);
         categories.forEach(function (category) {
             var picked = state.category === category.id;
-            echoControllerButton(state, tabs, 'category:' + selected.id + ':' + category.id, 'categories', category.label_key ? echoT(state, category.label_key) : echoModText(state, category, 'name'), function () { state.category = category.id; echoDraw(state); }, picked, 'height:4rem;border-top:0;border-left:0;border-right:0;border-bottom-width:2px;padding:1.1rem 0.3rem;margin-right:1.8rem;font-size:1.3rem;letter-spacing:0.07rem;text-transform:uppercase;color:' + (picked ? '#abedff' : '#5995aa') + ';', false, {background:'transparent', image:picked ? 'linear-gradient(0deg,rgba(44,134,169,0.28),rgba(0,0,0,0))' : 'none', hover:'transparent', border:picked ? '#99dff1' : 'transparent', focus:'#9ae9ff', corner:false});
+            var tab = echoControllerButton(state, tabs, 'category:' + selected.id + ':' + category.id, 'categories', category.label_key ? echoT(state, category.label_key) : echoModText(state, category, 'name'), function () { state.category = category.id; echoDraw(state); }, picked, 'height:4rem;border-top:0;border-left:0;border-right:0;border-bottom-width:2px;padding:1.1rem 0.3rem;margin-right:1.8rem;font-size:1.3rem;letter-spacing:0.07rem;text-transform:uppercase;color:' + (picked ? '#abedff' : '#5995aa') + ';', false, {background:'transparent', image:picked ? 'linear-gradient(0deg,rgba(44,134,169,0.28),rgba(0,0,0,0))' : 'none', hover:'transparent', border:picked ? '#99dff1' : 'transparent', focus:'#9ae9ff', corner:false});
+            echoButtonIcon(tab, echoCategoryIcon(selected, category), '1.5rem');
         });
+        var count = echoFixedText(state, categoryBar, 'optionCount', echoT(state, 'options') + ': ' + state.visibleOptions.length,
+            'echo-options-count', 'width:auto;margin-left:1rem;padding-bottom:0.6rem;white-space:nowrap;flex-wrap:nowrap;font-size:1.1rem;letter-spacing:0.12rem;text-transform:uppercase;color:#537f91;');
+        count.style.display = state.category === '__info' ? 'none' : 'flex';
         var settings = echoScrollPane(state, content, 'options:' + selected.id + ':' + state.category, 'echo-settings', '1.5rem 1rem 1.6rem 1rem');
-        state.visibleOptions = selected.options.filter(function (o) { return o.category === state.category && echoModCondition(state, selected, o.visible_when); });
         if (selected.integration_notice) echoText(settings, selected.integration_notice_key ? echoT(state, selected.integration_notice_key) : echoModText(state, selected, 'integration_notice'), 'echo-integration-notice', 'font-size:1.1rem;color:#d7b071;padding:0.8rem;border-left:0.2rem solid #c17e24;margin-bottom:1rem;');
         if (state.category === '__info') {
-            echoText(settings, echoT(state, 'info'), 'echo-category-title', 'font-size:2.5rem;text-transform:uppercase;color:#a3c2cf;padding-bottom:1rem;margin-bottom:1.3rem;border-bottom:1px solid #193c4a;');
             [echoModText(state, selected, 'description') || '–', selected.status, echoT(state, selected.persistent ? 'persistent' : 'notPersistent'), echoT(state, 'modTexts'), echoT(state, 'mouse'), echoT(state, 'restart')].forEach(function (line) { if (line) echoText(settings, line, '', 'font-size:1.4rem;margin-bottom:1.5rem;'); });
             if (state.lastResult) { echoText(settings, echoT(state, 'result'), '', 'font-size:1.8rem;color:#38add4;margin-top:1rem;'); echoText(settings, echoT(state, state.lastResult.status === 'applied' ? 'lastApplied' : 'lastFailed', {n:(state.lastResult.completed || []).length}), '', 'font-size:1.3rem;'); if ((state.lastResult.errors || []).length) echoText(settings, echoT(state, 'applyDetails'), '', 'font-size:1.2rem;color:#d7b071;'); }
         } else {
             var category = categories.filter(function (c) { return c.id === state.category; })[0];
-            var section = echoNode(settings, 'div', null, 'echo-section', 'flex-direction:row;align-items:center;justify-content:space-between;padding:0 0 1rem;border-bottom:1px solid #193c4a;margin-bottom:1.3rem;');
-            echoText(section, category.label_key ? echoT(state, category.label_key) : echoModText(state, category, 'name'), 'echo-category-title', 'width:auto;font-size:2.5rem;letter-spacing:0.03rem;text-transform:uppercase;color:#a3c2cf;');
-            echoText(section, echoT(state, 'options') + ': ' + state.visibleOptions.length, '', 'width:auto;font-size:1.1rem;letter-spacing:0.12rem;text-transform:uppercase;color:#537f91;');
             (category.presets || []).forEach(function (preset) {
                 if (!settings.echoPresets) {
                     settings.echoPresets = echoNode(settings, 'div', null, 'echo-presets', 'flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:1rem 1.2rem;margin-bottom:0.5rem;border:1px solid #2a566b;border-left:0.2rem solid #b47a29;background-image:linear-gradient(90deg,#0f2530,#091a27);');
@@ -1023,6 +1031,11 @@ function echoDraw(state) {
         hint.style.display = 'flex';
     } else {
         state.visibleOptions = [];
+        if (state.regions.modHeader) {
+            echoClear(state.regions.modHeader); state.regions.modHeader.echoHeaderKey = null;
+            state.regions.modHeader.echoHeaderTitle = null; state.regions.modHeader.style.display = 'none';
+        }
+        if (state.regions.categoryBar) state.regions.categoryBar.style.display = 'none';
         if (state.regions.categories) echoClear(state.regions.categories);
         if (state.paneCache['echo-settings']) {
             var hiddenPane = state.paneCache['echo-settings'];
@@ -1071,6 +1084,7 @@ function echoMountEditor(widget) {
         window.addEventListener('pagehide', function () {
             echoControllerSuspend(state);
             state.closed = true; ++state.generation; echoEditorDrag = null; echoScrollDrag = null;
+            echoArtworkReset(state);
             echoSyncPanelVisibility(state, 'pagehide');
             echoCancelCapture(state);
             echoReleaseTextFocus(state);
@@ -1091,7 +1105,7 @@ function echoMountEditor(widget) {
             echoFlushScrollLayout(state);
         }, true);
     }
-    echoDraw(state); record('editor_mounted', {native_host:widget.WidgetIdent, native_model_written:false, layout_revision:'1.2.4'});
+    echoDraw(state); record('editor_mounted', {native_host:widget.WidgetIdent, native_model_written:false, layout_revision:'1.3.3'});
     return state;
 }
 function echoOnEditorLifecycle(widget, name) {
@@ -1107,6 +1121,7 @@ function echoOnEditorLifecycle(widget, name) {
         if (!controllerWasAvailable && state.controller.available) echoControllerRefresh(state);
         if (allowed && (name === 'Event_Activate' || name === 'attached' || !wasVisible)) echoFetch(state);
         if (name === 'Event_Deactivate') {
+            echoArtworkReset(state);
             echoControllerSuspend(state);
             ++state.generation; state.busy = false; echoEditorDrag = null; echoScrollDrag = null;
             echoCancelCapture(state);
@@ -1118,7 +1133,7 @@ function echoOnEditorLifecycle(widget, name) {
 function echoProtoSelect() { /* The native placeholder model is retained; the ECHO editor owns its own selection. */ }
 function echoDescribeEditor(widget) {
     var state = widget && widget.EchoMenuState; if (!state) return null;
-    return {layout_revision:'1.2.4', catalog_count:state.catalog.mods.length, created_mod_rows:state.root.querySelectorAll('.echo-mod-card').length,
+    return {layout_revision:'1.3.3', catalog_count:state.catalog.mods.length, created_mod_rows:state.root.querySelectorAll('.echo-mod-card').length,
         controller:{available:!!state.controller.available, directional:!!state.controller.directional,
             capability_issue:state.controller.capabilityIssue,
             region:state.controller.region, target:state.controller.current, editing:!!state.controller.edit,

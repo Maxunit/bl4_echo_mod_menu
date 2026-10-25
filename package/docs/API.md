@@ -1,6 +1,6 @@
 # ECHO Menu API v1
 
-Provider API version: **1**, verified against ECHO Mod Menu **1.2.4**.
+Provider API version: **1**, verified against ECHO Mod Menu **1.3.3**.
 This is an optional ECHO extension on a registered PythonSDK mod. Your mod imports
 `mods_base`, never ECHO. ECHO's package version and your mod's version are
 independent of the provider API version.

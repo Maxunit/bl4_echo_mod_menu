@@ -7,6 +7,7 @@ import re
 from datetime import datetime, timezone
 from threading import get_ident
 from ..integration.provider import enrich, BoundSetting
+from ..integration.artwork import ArtworkCatalog
 from ..integration.contract import validate_value
 from .keybinds import LiveKeybind, valid_key
 
@@ -55,6 +56,7 @@ class Registry:
         self.providers = {}
         self.thread = get_ident()
         self.snapshot = None
+        self.artwork = {}
 
     def same_thread(self):
         if get_ident() != self.thread:
@@ -63,6 +65,7 @@ class Registry:
     def capture(self):
         self.same_thread()
         rows, errors, mods, options, profiles = [], [], {}, {}, {}
+        artwork = ArtworkCatalog()
         getter = getattr(self.base, 'get_ordered_mod_list', None)
         if not callable(getter):
             raise RuntimeError('mods_base.get_ordered_mod_list is unavailable')
@@ -200,6 +203,7 @@ class Registry:
                 profile = enrich(mod, row, options, digest)
                 if profile is not None:
                     profiles[mid] = profile
+                artwork.decorate(mod, row)
                 rows.append(row)
             except Exception as error:
                 errors.append(type(error).__name__ + ': ' + str(error)[:180])
@@ -209,11 +213,13 @@ class Registry:
                     if key[0] == locals().get('mid'):
                         del options[key]
         self.mods, self.options, self.providers = mods, options, profiles
-        self.snapshot = {'version': '1.2.4', 'captured_utc': datetime.now(timezone.utc).isoformat(),
+        self.artwork = artwork.assets
+        self.snapshot = {'version': '1.3.3', 'captured_utc': datetime.now(timezone.utc).isoformat(),
                          'mods': rows, 'errors': errors[:32], 'status': 'read',
                          'capabilities': {'mod_metadata': True, 'option_values_read_only': False,
                                           'mod_state_writes': True, 'option_writes': True,
-                                          'keybind_writes': True, 'provider_api': 1,
+                                           'keybind_writes': True, 'provider_api': 1,
+                                           'mod_artwork': True, 'builtin_icons': True,
                                           'apply_on': 'native_navigation_deactivate'}}
         return self.snapshot
 

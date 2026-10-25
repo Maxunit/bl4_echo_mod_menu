@@ -25,3 +25,17 @@ https://github.com/trumank/repak/tree/master/repak/src
 
 No project-wide license grant has been selected for ECHO-authored code in this
 initial repository preparation. This notice does not change third-party licenses.
+
+## Tabler interface icons
+
+Twenty outline icons are copied from Tabler Icons v3.46.0, pinned to commit
+`8ac7d81b72ece11072ef25ea9fd92e80c6f3c9fc`:
+https://github.com/tabler/tabler-icons/tree/8ac7d81b72ece11072ef25ea9fd92e80c6f3c9fc
+
+Their original SVG sources are under `ui/icons/`; cyan PNG derivatives are
+bundled in ECHO's PAK. The complete MIT license is included at
+`licenses/icons/Tabler-MIT.txt`. The ECHO mark is project-authored.
+`src/bl4_echo_mod_menu/icons.json` records source/raster hashes and provenance.
+
+The optional TPS artwork overlay includes the user-supplied transparent logo
+unchanged. Its source manifest records the exact original bytes' SHA-256.

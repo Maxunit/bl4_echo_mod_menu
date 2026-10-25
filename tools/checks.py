@@ -16,6 +16,7 @@ def main():
     run(['node','tests/verify_prototype.js'])
     controller=run(['node','tests/verify_controller.js'])
     run(['node','tests/verify_bootstrap.js'])
+    artwork=run(['node','tests/verify_artwork.js'])
     with tempfile.TemporaryDirectory(prefix='echo-sdkmod-') as directory:
         archive=write_sdkmod(Path(directory)/'bl4_echo_mod_menu.sdkmod')
         environment['ECHO_TEST_SDKMOD']=str(archive)
@@ -24,6 +25,7 @@ def main():
     run([sys.executable,'tools/check_repository.py'])
     report={'python_tests_per_import_mode':count,'import_modes':['source','sdkmod'],
             'controller_scenarios':int(re.search(r'PASS: (\d+) controller scenarios',controller).group(1)),
+            'artwork_ui_scenarios':int(re.search(r'PASS: (\d+) artwork UI scenarios',artwork).group(1)),
             'native_cpp_and_cohtml':'modeled; native runtime is not executed by offline tests',
             'source_hygiene':'passed'}
     out=ROOT/'build';out.mkdir(exist_ok=True)

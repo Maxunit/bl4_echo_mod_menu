@@ -32,6 +32,15 @@ ECHO discovers registered SDK mods, their visible options and their actual
 registered keybinds. Authors can optionally supply categories, presets,
 translations and additional settings through [API v1](docs/API.md).
 
+Version 1.3.0 adds bundled Tabler/ECHO icons and optional PNG mod logos or banners.
+Authors can declare [artwork](docs/ARTWORK.md) independently of their settings
+provider. The installer also includes an optional TPS logo overlay for the
+integration from the v100.3 bundle; see its enclosed installation notes.
+
+The selected mod's logo or compact name heading sits above its category tabs
+and remains visible while scrolling settings. Categories open directly to their
+presets and options; the option count appears beside the tabs.
+
 - Edit values locally, then choose **Save & Apply** to queue the complete draft.
 - Close the inventory to apply and save queued changes through their owning mods.
 - Changing to another tab does not apply the draft.
@@ -98,6 +107,9 @@ and [architecture notes](https://github.com/Maxunit/bl4_echo_mod_menu/blob/main/
 GitHub Actions builds and tests the packages on Windows and uploads the installer,
 sources and checksums as one artifact.
 
+For a manual repository update, extract `_sources.zip` and upload its contents at
+the repository root. It includes the matching ready-to-install `package/` files.
+
 ## Runtime data and diagnostics
 
 Mod values remain owned and saved by each mod. ECHO stores its own preferences
@@ -109,6 +121,6 @@ not part of this repository.
 
 ## Version
 
-Current version: **1.2.4**, provider API **1**. See the
+Current version: **1.3.3**, provider API **1**. See the
 [changelog](CHANGELOG.md), [compatibility](COMPATIBILITY.md) and
 [third-party notices](THIRD_PARTY_NOTICES.md).

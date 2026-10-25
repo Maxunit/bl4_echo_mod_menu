@@ -5,6 +5,7 @@ from package_build import ROOT,SOURCE,MODULE,ARCHIVE_NAME,add_bytes,write_sdkmod
 from pak_codec import read_pak,write_pak
 from font_validation import ui_fonts, RESOURCE_PREFIX
 from localization_data import load_translations
+from icon_validation import ui_icons
 PACKAGE=ROOT/'package'
 DIST=ROOT/'dist'
 PAK_NAME='zzz_BL4_ECHO_Mod_Menu_999_P.pak'
@@ -34,11 +35,14 @@ def build_ui():
     languages=json.loads((MODULE/'languages.json').read_text(encoding='utf-8'))
     fonts=ui_fonts()
     assert len(languages)==len({row['code'] for row in languages})==14
-    parts=[(ROOT/'ui'/n).read_text(encoding='utf-8') for n in ('transport.js','controller.js','language.js','editor.js','bootstrap.js')]
+    icon_names,icon_resources=ui_icons()
+    parts=[(ROOT/'ui'/n).read_text(encoding='utf-8') for n in ('transport.js','controller.js','language.js','visuals.js','editor.js','bootstrap.js')]
     extension='\n'.join(parts).replace('__ECHO_TRANSLATIONS__',json.dumps(translations,ensure_ascii=False,separators=(',',':')))
     extension=extension.replace('__ECHO_LANGUAGES__',json.dumps(languages,ensure_ascii=False,separators=(',',':')))
     extension=extension.replace('__ECHO_LANGUAGE_FONTS__',json.dumps([{k:font[k] for k in ('code','family','file')} for font in fonts],separators=(',',':')))
+    extension=extension.replace('__ECHO_ICON_NAMES__',json.dumps(icon_names,separators=(',',':')))
     files=native_resources()
+    files.update(icon_resources)
     for font in fonts:files[RESOURCE_PREFIX+font['file']]=(ROOT/'ui/fonts'/font['file']).read_bytes()
     files[MANAGER]=((ROOT/'native/widget_manager.base.js').read_text(encoding='utf-8')+"\n;(function () {\n'use strict';\n"+extension+'\n})();\n').encode()
     files[NAVIGATION]=((ROOT/'native/navigationbar.base.js').read_text(encoding='utf-8')+'\n;\n'+(ROOT/'ui/navigation.js').read_text(encoding='utf-8')).encode()
@@ -71,11 +75,24 @@ def build_examples(destination: Path | None = None) -> list[Path]:
     return archives
 
 def source_files():
-    for folder in ('src','ui','native','tools','tests','docs','examples','.github','licenses'):
+    for folder in ('src','ui','native','tools','tests','docs','examples','integrations','package','.github','licenses'):
         for p in ordered_paths((ROOT/folder).rglob('*')):
             if p.is_file() and '__pycache__' not in p.parts and p.suffix!='.pyc':yield p
     for name in ('README.md','CHANGELOG.md','COMPATIBILITY.md','THIRD_PARTY_NOTICES.md','.gitignore','.gitattributes'):
         yield ROOT/name
+
+def build_integrations():
+    """Keep the optional, explicitly versioned TPS artwork overlay separate."""
+    source=ROOT/'integrations/tps_artwork'
+    manifest=json.loads((source/'manifest.json').read_text(encoding='utf-8'))
+    module=source/'sdk_mods/BL4ThirdPersonPOC/echo_menu.py'
+    logo=source/'sdk_mods/BL4ThirdPersonPOC/assets/BL4_TPS_LOGO_TRANSPARENT.png'
+    assert sha(module.read_bytes())==manifest['echo_menu_sha256']
+    assert sha(logo.read_bytes())==manifest['logo_sha256']
+    destination=PACKAGE/'optional';destination.mkdir(exist_ok=True)
+    with zipfile.ZipFile(destination/'TPS_Artwork_Overlay.zip','w') as archive:
+        for path in ordered_paths(source.rglob('*')):
+            if path.is_file():add_bytes(archive,path.relative_to(source).as_posix(),path.read_bytes())
 
 def main():
     release=version();assert all(s.isdigit() for s in release.split('.'))
@@ -86,9 +103,10 @@ def main():
     PACKAGE.mkdir();DIST.mkdir(exist_ok=True)
     write_sdkmod(PACKAGE/'sdk_mods'/ARCHIVE_NAME)
     hashes=build_ui();write_native_tag_config();build_examples()
+    build_integrations()
     for name in ('README.md','CHANGELOG.md','COMPATIBILITY.md','THIRD_PARTY_NOTICES.md'):shutil.copyfile(ROOT/name,PACKAGE/name)
     (PACKAGE/'docs').mkdir()
-    for name in ('CONTROLS.md','MOD_AUTHORS.md','API.md'):
+    for name in ('CONTROLS.md','MOD_AUTHORS.md','API.md','ARTWORK.md'):
         shutil.copyfile(ROOT/'docs'/name,PACKAGE/'docs'/name)
     shutil.copytree(ROOT/'licenses',PACKAGE/'licenses')
     manifest={'version':release,'provider_api':1,'distribution':'sdkmod','resources_sha256':hashes,
@@ -107,6 +125,6 @@ def main():
         with zipfile.ZipFile(target) as archive:assert archive.testzip() is None
         print(target.name,target.stat().st_size,sha(target.read_bytes()))
     (DIST/'SHA256SUMS.txt').write_text(''.join(sha(p.read_bytes())+'  '+p.name+'\n' for p in (installer,sources)),encoding='utf-8',newline='\n')
-    print('Build complete: one SDKMOD, native PAK, required tag INI, optional examples, English docs and reproducible sources.')
+    print('Build complete: SDKMOD, native PAK, tag INI, icons, optional TPS artwork overlay, docs and reproducible sources.')
 
 if __name__=='__main__':main()

@@ -33,7 +33,7 @@ class Session:
         self.expected = {}
         self.last_logged_error = None
         self.config = read_json(__package__, 'config.json')
-        self.report = {'component':'ECHO Scene', 'version':'1.2.4',
+        self.report = {'component':'ECHO Scene', 'version':'1.3.3',
             'time_utc':datetime.now(timezone.utc).isoformat(), 'stage':'preparing',
             'scope':{'target_widget':OWN_WIDGET, 'sdk_hooks_max':2,
                 'request_quota':None, 'requests_per_activation':1,
@@ -172,7 +172,7 @@ class Session:
         try: self.save()
         except OSError as write_error: message += '; report write: '+str(write_error)[:120]
         if message != self.last_logged_error:
-            self.emit(f'[ECHO Scene] FAILED v1.2.4 {message} json={self.path}')
+            self.emit(f'[ECHO Scene] FAILED v1.3.3 {message} json={self.path}')
             self.last_logged_error = message
 
     def on_event(self, mode, args):
@@ -225,7 +225,7 @@ def start(entry_file=None):
     emit = sdk.logging.info
     if _active is not None:
         if _active.enabled: return True
-        emit('[ECHO Scene] START_REJECTED v1.2.4 previous session requires stop/cleanup')
+        emit('[ECHO Scene] START_REJECTED v1.3.3 previous session requires stop/cleanup')
         return False
     session = None
     try:
@@ -236,13 +236,13 @@ def start(entry_file=None):
         session = Session(sdk, CurrentImage(root), directory/('scene_'+stamp+'.json'), emit)
         session.start()
         _active = session
-        emit(f'[ECHO Scene] ARMED v1.2.4 hooks=2 quota=none quiet=True json={session.path}')
+        emit(f'[ECHO Scene] ARMED v1.3.3 hooks=2 quota=none quiet=True json={session.path}')
         return True
     except Exception as error:
         if session is not None:
             session.fail(error)
             if session.installed or session.token is not None: _active = session
-        else: emit('[ECHO Scene] START_FAILED v1.2.4 '+type(error).__name__+': '+str(error)[:400])
+        else: emit('[ECHO Scene] START_FAILED v1.3.3 '+type(error).__name__+': '+str(error)[:400])
         return False
 
 
@@ -254,7 +254,7 @@ def stop():
     try:
         _active.stop()
         c = _active.report['counts']
-        sdk.logging.info(f'[ECHO Scene] STOPPED v1.2.4 queued={c["queued"]} cancel={c["cancel_returned"]} release={c["release_returned"]} errors={len(_active.report["errors"])} hooks={len(_active.installed)} json={_active.path}')
+        sdk.logging.info(f'[ECHO Scene] STOPPED v1.3.3 queued={c["queued"]} cancel={c["cancel_returned"]} release={c["release_returned"]} errors={len(_active.report["errors"])} hooks={len(_active.installed)} json={_active.path}')
         _active = None
         return True
     except Exception as error:

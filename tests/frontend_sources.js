@@ -5,6 +5,7 @@ const root=path.join(__dirname,'..');
 const read=name=>fs.readFileSync(path.join(root,name),'utf8');
 const languages=JSON.parse(read('src/bl4_echo_mod_menu/languages.json'));
 const translations=Object.fromEntries(languages.map(row=>[row.code,JSON.parse(read('ui/locales/'+row.code+'.json'))]));
-module.exports={translations,translationsText:JSON.stringify(translations),languageScript:read('ui/language.js')
+module.exports={translations,translationsText:JSON.stringify(translations),visualsScript:read('ui/visuals.js')
+ .replace('__ECHO_ICON_NAMES__',JSON.stringify(JSON.parse(read('src/bl4_echo_mod_menu/icons.json')).icons.map(icon=>icon.id))),languageScript:read('ui/language.js')
  .replace('__ECHO_LANGUAGES__',JSON.stringify(languages))
  .replace('__ECHO_LANGUAGE_FONTS__',JSON.stringify(JSON.parse(read('ui/fonts/manifest.json')).fonts))};

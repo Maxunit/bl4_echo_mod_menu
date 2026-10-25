@@ -61,3 +61,26 @@ The SDK settings directory owns mod values. ECHO keeps only language preferences
 and temporary/queued drafts. Diagnostic files are opt-in (or produced on errors).
 The local transport binds to `127.0.0.1`; its fixed protocol marker is not a secret
 or an authorization replacement. Mod setters retain their own authority checks.
+
+## Presentation assets
+
+`integration/artwork.py` captures bounded PNG resources on the game thread,
+independently of provider validity. The loopback worker receives bytes keyed by
+content hash and checks the active inventory epoch; it never resolves package
+paths. `ui/visuals.js` owns decorative icons, shared image requests and stale
+response cancellation. Image completion updates only existing image nodes.
+Committed SVG/PNG provenance is validated by `tools/icon_validation.py` and
+`icons.json`. No new native hooks, gameplay writes, timers or polling are added.
+
+Cohtml does not support CSS `order` or `object-fit`. Icons precede explicit text
+labels in DOM order. The heading has a bounded width and the language toolbar is
+anchored independently to the header's right edge. Header images use the PNG's
+validated dimensions and the viewport's CSS dimensions to calculate proportional
+sizes and centered placement during existing layout, resize and image-completion events. Image sizing
+does not redraw settings or change the reserved header height.
+
+The mod header is a retained sibling before the category bar and settings pane.
+Its image is rebuilt only for a different mod, resource, inventory epoch or
+view generation. Language changes update the name fallback in place. Categories
+render their notices/presets/settings directly, with the option count beside
+the tabs. Missing or failed artwork collapses to a compact mod-name heading.

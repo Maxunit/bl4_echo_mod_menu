@@ -51,7 +51,7 @@ function echoControllerTag(node, spec) {
     return node;
 }
 function echoControllerButton(state, parent, id, region, text, fn, picked, style, disabled, palette) {
-    return echoControllerTag(echoButton(state, parent, text, fn, picked, style, disabled, palette),
+    return echoControllerTag(echoDecorateButton(echoButton(state, parent, text, fn, picked, style, disabled, palette), id),
         {id:id, region:region, preferred:!!picked});
 }
 function echoControllerOptionButton(state, parent, mod, option, role, text, fn, picked, style, disabled, palette) {

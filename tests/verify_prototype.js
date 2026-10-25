@@ -7,6 +7,7 @@ assert.deepStrictEqual(Object.keys(dictionary.en).sort(),Object.keys(dictionary.
 let source=fs.readFileSync(path.join(__dirname,'../ui/editor.js'),'utf8').replace('__ECHO_TRANSLATIONS__',JSON.stringify(dictionary));
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../ui/controller.js'),'utf8'),ctx);
 vm.runInContext(require('./frontend_sources').languageScript,ctx);
+vm.runInContext(require('./frontend_sources').visualsScript,ctx);
 vm.runInContext(source,ctx);
 function chooseLanguage(state,code){
  state.root.querySelector('.echo-language-trigger').click();
@@ -77,7 +78,8 @@ assert(state.root.querySelector('.echo-mode').textContent==='MOD-KONFIGURATION')
  assert.strictEqual(state.root.querySelector('.echo-facets'),null);
 }
 assert.strictEqual(state.root.querySelectorAll('.echo-frame-corner').length,4);
-assert.strictEqual(state.root.querySelector('.echo-editor').firstChild.className,'echo-categories');
+assert.strictEqual(state.root.querySelector('.echo-editor').firstChild.className,'echo-mod-header');
+assert.strictEqual(state.root.querySelector('.echo-categories').parentElement.className,'echo-category-bar');
 assert.strictEqual(state.root.querySelector('.echo-mod-details').querySelector('button').textContent,'Deaktivieren');
 assert(state.root.querySelector('.echo-mod-symbol'));
 const cardHeights=state.root.querySelectorAll('.echo-mod-card').map(n=>n.style.cssText.match(/;height:([^;]+)/)[1]);
@@ -145,7 +147,9 @@ assert(tabs[0].style.cssText.includes('background-color:transparent'));
 tabs[0].listeners.mouseenter();tabs[0].listeners.mouseleave();assert.strictEqual(tabs[0].style.backgroundColor,'transparent');
 assert(tabs[0].style.backgroundImage.includes('linear-gradient'));
 assert(!tabs[0].querySelector('.echo-button-corner'));
-assert(state.root.querySelector('.echo-section').textContent.includes('Options: 2'));
+assert(state.root.querySelector('.echo-options-count').textContent.includes('Options: 2'));
+assert.strictEqual(state.root.querySelector('.echo-section'),null);
+assert.strictEqual(state.root.querySelector('.echo-category-title'),null);
 assert(state.root.querySelector('.echo-body').style.cssText.includes('bottom:9.5rem'));
 // Wheel, thumb, page clicks and buttons act on the same bounded viewport, without timers.
 let pane=state.scrollPanes.find(p=>p.key.startsWith('options:'));
