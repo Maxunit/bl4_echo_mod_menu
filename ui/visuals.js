@@ -2,19 +2,29 @@
 var echoBuiltinIcons = __ECHO_ICON_NAMES__;
 function echoIcon(parent, name, size) {
     if (echoBuiltinIcons.indexOf(name) < 0) name = 'puzzle';
-    var node = echoNode(parent, 'img', null, 'echo-icon', 'width:' + (size || '1.6rem') + ';height:' + (size || '1.6rem') + ';margin-right:0.6rem;object-fit:contain;pointer-events:none;');
+    var node = echoNode(parent, 'img', null, 'echo-icon', 'width:' + (size || '1.6rem') + ';height:' + (size || '1.6rem') + ';margin-right:0.8rem;pointer-events:none;');
     node.alt = ''; node.tabIndex = -1; node.draggable = false;
     node.setAttribute('aria-hidden', 'true');
     node.src = 'coui://uiresources/echo_mod_menu/icons/' + name + '.png';
     node.addEventListener('error', function () { node.style.visibility = 'hidden'; });
     return node;
 }
+function echoButtonIcon(node, name, size) {
+    // Cohtml does not support CSS order. Give both parts real DOM order and
+    // keep the button's existing corner marker, input target and listeners.
+    var text = node.textContent, children = Array.prototype.slice.call(node.children);
+    node.textContent = '';
+    var icon = echoIcon(node, name, size);
+    echoText(node, text, 'echo-button-label', 'width:auto;font-size:inherit;color:inherit;white-space:nowrap;flex-wrap:nowrap;pointer-events:none;');
+    children.forEach(function (child) { node.appendChild(child); });
+    return icon;
+}
 function echoDecorateButton(node, id) {
     var names = {'action:refresh':'restore', 'action:reset':'restore', 'action:discard':'restore',
         'action:clear':'trash', 'action:save':'device-floppy'};
     var name = names[id] || (id.indexOf('status:') === 0 ? 'power' : '');
     if (name) {
-        var icon = echoIcon(node, name, '1.45rem'); icon.style.order = '-1';
+        var icon = echoButtonIcon(node, name, '1.45rem');
         if (id === 'action:save') icon.style.backgroundColor = '#123544';
     }
     return node;
@@ -49,8 +59,17 @@ function echoArtworkComplete(state, entry, source) {
     if (typeof echoFlushScrollLayout === 'function') echoFlushScrollLayout(state);
 }
 function echoArtworkSetSource(node, source) {
-    if (source) { if (node.src !== source) node.src = source; }
-    else if (node.echoArtworkHeader) node.echoArtworkHeader.style.display = 'none';
+    if (source) {
+        if (node.echoArtworkIcon) echoModIconSize(node, node.echoArtworkReference);
+        if (node.src !== source) node.src = source;
+    }
+    else echoArtworkHideHeader(node);
+}
+function echoArtworkHideHeader(node) {
+    var frame = node.echoArtworkHeader;
+    if (!frame) return;
+    frame.style.display = 'none';
+    if (frame.echoArtworkFallback) frame.echoArtworkFallback.style.display = 'flex';
 }
 function echoArtworkDecodeError(state, reference) {
     var entry = state.artworkCache && reference && state.artworkCache[reference.id];
@@ -95,9 +114,11 @@ function echoArtworkLoad(state, reference, node) {
 function echoModIcon(state, parent, mod) {
     var node = echoIcon(parent, 'puzzle', '2rem');
     node.className += ' echo-mod-symbol';
+    node.echoArtworkIcon = true;
     node.addEventListener('error', function () {
         if (node.src !== node.echoArtworkFallback) {
             echoArtworkDecodeError(state, node.echoArtworkReference);
+            echoModIconSize(node, null);
             node.style.visibility = 'visible'; node.src = node.echoArtworkFallback;
         }
     });
@@ -111,18 +132,73 @@ function echoModIconUpdate(state, node, mod) {
     node.echoArtworkFallback = 'coui://uiresources/echo_mod_menu/icons/' + name + '.png';
     if (node.echoArtworkKey !== key) {
         node.echoArtworkKey = key; node.src = node.echoArtworkFallback; node.style.visibility = 'visible';
+        echoModIconSize(node, null);
     }
     if (reference && typeof reference === 'object') echoArtworkLoad(state, reference, node);
 }
-function echoArtworkHeader(state, parent, mod) {
+function echoArtworkContain(reference, width, height) {
+    if (!reference || typeof reference.width !== 'number' || typeof reference.height !== 'number' ||
+        !isFinite(reference.width) || !isFinite(reference.height) ||
+        reference.width <= 0 || reference.height <= 0 ||
+        !isFinite(width) || !isFinite(height) || width <= 0 || height <= 0) return null;
+    var scale = Math.min(width / reference.width, height / reference.height);
+    return {width:reference.width * scale, height:reference.height * scale};
+}
+function echoModIconSize(node, reference) {
+    var size = echoArtworkContain(reference, 2, 2) || {width:2, height:2};
+    node.style.width = size.width + 'rem'; node.style.height = size.height + 'rem';
+    // Reserve a square slot even for a non-square PNG, keeping names aligned.
+    node.style.marginRight = (2 - size.width + 0.8) + 'rem';
+}
+function echoArtworkFitHeaders(state) {
+    var changed = false;
+    Array.prototype.forEach.call(state.root.querySelectorAll('.echo-mod-header-image'), function (node) {
+        var width = node.parentElement.clientWidth, height = node.parentElement.clientHeight;
+        if (!(width > 0 && height > 0)) {
+            var box = node.parentElement.getBoundingClientRect(); width = box.width; height = box.height;
+        }
+        var size = echoArtworkContain(node.echoArtworkReference, width, height);
+        if (!size) return;
+        var styles = {width:size.width + 'px', height:size.height + 'px',
+            left:(width - size.width) / 2 + 'px', top:(height - size.height) / 2 + 'px'};
+        Object.keys(styles).forEach(function (key) {
+            if (node.style[key] !== styles[key]) { node.style[key] = styles[key]; changed = true; }
+        });
+    });
+    return changed;
+}
+function echoModHeader(state, parent, mod) {
+    var reference = (mod.artwork || {}).header || {};
+    // Category and language changes retain the same image node. A different
+    // mod, image, inventory session or reopened view gets a fresh header.
+    var key = JSON.stringify([state.generation, state.epoch, mod.id,
+        reference.id, reference.width, reference.height]);
+    if (parent.echoHeaderKey !== key) {
+        echoClear(parent); parent.echoHeaderKey = key;
+        parent.echoHeaderTitle = echoText(parent, '', 'echo-mod-heading',
+            'height:4.8rem;align-items:center;justify-content:center;overflow:hidden;font-size:2.4rem;color:#a3c2cf;margin-bottom:0.8rem;');
+        echoArtworkHeader(state, parent, mod, parent.echoHeaderTitle);
+    }
+    var name = echoModText(state, mod, 'name');
+    if (parent.echoHeaderTitle.textContent !== name) parent.echoHeaderTitle.textContent = name;
+    parent.style.display = 'flex';
+}
+function echoArtworkHeader(state, parent, mod, fallback) {
     var reference = (mod.artwork || {}).header;
-    if (!reference || typeof reference !== 'object' || !reference.id) return;
-    var frame = echoNode(parent, 'div', null, 'echo-mod-artwork', 'height:15rem;width:100%;margin-bottom:1.2rem;padding:0.5rem 1rem;border-bottom:1px solid #214858;overflow:hidden;pointer-events:none;');
-    var image = echoNode(frame, 'img', null, 'echo-mod-header-image', 'width:100%;height:100%;object-fit:contain;object-position:left center;pointer-events:none;');
+    if (!reference || typeof reference !== 'object' || typeof reference.id !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(reference.id) || !echoArtworkContain(reference, 1, 1)) return;
+    var frame = echoNode(parent, 'div', null, 'echo-mod-artwork', 'height:15rem;width:100%;margin-bottom:1.2rem;border-bottom:1px solid #214858;overflow:hidden;pointer-events:none;');
+    frame.echoArtworkFallback = fallback;
+    if (fallback) fallback.style.display = 'none';
+    var viewport = echoNode(frame, 'div', null, 'echo-mod-artwork-viewport', 'position:absolute;left:1rem;right:1rem;top:0.5rem;bottom:0.5rem;overflow:hidden;pointer-events:none;');
+    // Explicit proportional dimensions avoid unsupported object-fit and do
+    // not change the original PNG, including its transparent margins.
+    var image = echoNode(viewport, 'img', null, 'echo-mod-header-image', 'position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;');
     image.alt = ''; image.tabIndex = -1; image.draggable = false;
+    image.echoArtworkReference = reference;
     image.setAttribute('aria-hidden', 'true'); image.echoArtworkHeader = frame;
     image.addEventListener('error', function () {
-        echoArtworkDecodeError(state, reference); frame.style.display = 'none'; echoFlushScrollLayout(state);
+        echoArtworkDecodeError(state, reference); echoArtworkHideHeader(image); echoFlushScrollLayout(state);
     });
     echoArtworkLoad(state, reference, image);
 }

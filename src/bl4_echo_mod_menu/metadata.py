@@ -1,6 +1,6 @@
 """Package identity, shared by runtime diagnostics and the release builder."""
-VERSION = '1.3.0'
-UI_REVISION = '1.3.0'
+VERSION = '1.3.3'
+UI_REVISION = '1.3.3'
 
 def distribution_info():
     archive = getattr(__loader__, 'archive', None)

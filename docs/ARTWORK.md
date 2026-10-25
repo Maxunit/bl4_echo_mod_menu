@@ -31,13 +31,20 @@ No import from ECHO, registration callback, hook or timer is required.
 | --- | --- |
 | `package` | The name of the already imported Python package containing the image resources. That module must hold a reference to this registered mod object. Required only when PNG resources are used. |
 | `icon` | A built-in icon name or a package-relative PNG path such as `assets/icon.png`. Optional; defaults to the puzzle icon. |
-| `header` | A package-relative PNG path. Optional; shown above the selected mod's settings and information. |
+| `header` | A package-relative PNG path. Optional; shown above the selected mod's category tabs. |
 | `category_icons` | Up to 64 mappings from stable category identifiers to built-in icon names. Use the provider's original identifier, such as `camera`, without ECHO's internal prefix. |
 
 The header fits the complete image inside a 15-rem-high region with transparency
-preserved. ECHO does not crop, recolor or rewrite the original file bytes.
-Choose transparent PNG for a logo or an opaque wide PNG for a banner. A header
-is part of the settings scroll pane and scrolls away with the introduction.
+preserved. Since 1.3.1, explicit proportional dimensions are calculated from the
+PNG metadata and the available area; unsupported CSS `object-fit` is not used.
+Non-square custom icons also retain their proportions inside a square slot.
+Since 1.3.2, header images are centered horizontally within their available area.
+ECHO does not crop, recolor or rewrite the original file bytes.
+Choose transparent PNG for a logo or an opaque wide PNG for a banner. Since
+1.3.3, the header sits above the category tabs, outside the settings scroll pane.
+It remains visible during scrolling and retains the same image node when
+changing categories. Without usable artwork, a compact localized mod-name
+heading replaces the image area.
 
 Built-in names:
 
@@ -61,7 +68,8 @@ in total. The complete inventory capture retains at most 16 MiB of distinct PNG
 bytes; identical images are shared. Only static PNG containers are accepted.
 ECHO checks the container, dimensions and chunk checksums; Cohtml decodes pixels.
 
-Missing, rejected or undecodable images use the normal icon or omit the header.
+Missing, rejected or undecodable images use the normal icon or a compact
+mod-name header.
 They do not reject a settings provider or change a draft. Diagnostic catalog
 metadata can contain `artwork.warnings` for rejected declarations or resources.
 Reopen the inventory after changing an artwork declaration or image file.
@@ -75,6 +83,20 @@ the current inventory-session identifier. Its worker never reads a mod package,
 imports another mod or touches SDK objects. The frontend shares each response
 within the session and cancels pending requests when the panel closes.
 Image completion never redraws an active field editor or changes its value.
+
+## Optional Third Person logo overlay
+
+The installer includes `optional/TPS_Artwork_Overlay.zip`. It targets the TPS
+integration from `BL4_ECHO_Mod_Menu_v100_3_Native_Tag_Config_QA.zip` specifically.
+Its enclosed `README_DE.txt` explains installation. Install the ECHO update first,
+then, with the game closed, extract this optional overlay into the game root if
+using that TPS integration. It replaces only TPS's `echo_menu.py` and adds the
+original transparent logo. Keep newer/custom versions of that file and copy the
+five-line artwork assignment into `create_provider(owner)` instead.
+
+The overlay does not ship a full TPS mod. Its source manifest records the original
+and modified integration hashes and the byte-identical logo hash. TPS settings,
+callbacks, build authorization and gameplay logic are unchanged.
 
 ## Validation boundary
 

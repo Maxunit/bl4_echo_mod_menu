@@ -23,6 +23,12 @@ ownership, exact-byte loopback transfer, stale requests and decorative focus
 identity. Icons are committed PNGs; hashes, dimensions and original SVG sources
 are checked without image-library dependencies. The optional TPS overlay is
 validated against its pinned integration and unchanged logo hashes.
+Layout regressions also check icon/label DOM order, the language toolbar's bounds,
+proportional header sizing for the real TPS dimensions and square/wide/tall PNGs,
+resize and deferred layout, plus non-square icon fallback and slot alignment.
+They also check that the mod header precedes the tabs outside the scroll pane,
+retains its image across category changes, and uses a compact localized name
+when artwork is missing or fails. Empty filters and stale responses are covered.
 
 The native C++ boundary, physical input delivery, DOM geometry and Cohtml renderer
 are modeled. Offline tests do not certify native execution or in-game pixels.

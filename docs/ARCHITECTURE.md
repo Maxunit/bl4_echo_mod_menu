@@ -71,3 +71,16 @@ paths. `ui/visuals.js` owns decorative icons, shared image requests and stale
 response cancellation. Image completion updates only existing image nodes.
 Committed SVG/PNG provenance is validated by `tools/icon_validation.py` and
 `icons.json`. No new native hooks, gameplay writes, timers or polling are added.
+
+Cohtml does not support CSS `order` or `object-fit`. Icons precede explicit text
+labels in DOM order. The heading has a bounded width and the language toolbar is
+anchored independently to the header's right edge. Header images use the PNG's
+validated dimensions and the viewport's CSS dimensions to calculate proportional
+sizes and centered placement during existing layout, resize and image-completion events. Image sizing
+does not redraw settings or change the reserved header height.
+
+The mod header is a retained sibling before the category bar and settings pane.
+Its image is rebuilt only for a different mod, resource, inventory epoch or
+view generation. Language changes update the name fallback in place. Categories
+render their notices/presets/settings directly, with the option count beside
+the tabs. Missing or failed artwork collapses to a compact mod-name heading.

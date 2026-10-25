@@ -69,8 +69,8 @@ def register_with_project(factory_module, directory, project_text, display_versi
 class Tests(unittest.TestCase):
     def test_release_versions_are_accepted_by_the_original_sdk_parser(self):
         result=validate_distribution_versions()
-        self.assertEqual(result['echo'],'1.3.0')
-        self.assertEqual(result['echo_version_info'],[1,3,0])
+        self.assertEqual(result['echo'],'1.3.3')
+        self.assertEqual(result['echo_version_info'],[1,3,3])
         self.assertEqual(result['example'],'1.0.0')
         with factory() as (sdk,created,registered),tempfile.TemporaryDirectory() as directory:
             register_with_project(sdk,directory,'[project]\nversion = "1.0.0"\n','1.0.0')

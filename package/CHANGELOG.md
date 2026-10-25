@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.3.3 — mod banner above category tabs (in-game test build)
+
+- Move the selected mod's centered logo above its category tabs, outside the
+  settings scroll pane. Retain the same image node when changing categories.
+- Show a compact localized mod-name heading when artwork is absent, rejected
+  or fails to load/decode, without leaving an empty banner-sized gap.
+- Start category content directly with its notices, presets and settings;
+  remove the duplicate category/Information heading.
+- Keep the visible-option counter beside the tabs, hiding it on Information.
+- Preserve per-category scrolling, drafts, presets, controller targets and the
+  existing input/lifecycle routes. Keep the TPS PNG and overlay unchanged.
+- Extend offline coverage for header order/identity, scrolling, compact name
+  fallbacks, empty selections and stale image responses. In-game visual
+  validation of the new layout remains required.
+
+## 1.3.2 — centered mod headers
+
+- Center header logos horizontally within the available artwork area while
+  preserving proportional sizing, transparency and original PNG bytes.
+- Retain centered placement through the existing resize/layout events.
+
+## 1.3.1 — Cohtml icon layout and proportional artwork (in-game test build)
+
+- Place mod icons directly to the left of mod names with a reserved icon slot
+  and spacing, preserving card height and controller targets.
+- Place category and action icons before explicit text labels in DOM order;
+  remove unsupported CSS `order` from the UI.
+- Bound the heading width and anchor the language toolbar to the header's right
+  edge, preventing its controls from being pushed beyond the screen.
+- Fit headers using validated PNG dimensions and the measured content area,
+  replacing unsupported `object-fit` with explicit proportional image sizes.
+- Keep non-square custom mod icons proportional in the same reserved slot.
+- Refit headers on existing layout/resize/image events without timers or polling.
+- Preserve the supplied TPS PNG and the optional TPS overlay byte-for-byte.
+- Extend offline regressions for DOM order, language toolbar constraints,
+  resize/deferred layout, image proportions and icon fallbacks. BL4 pixel
+  validation of this correction is still required.
+
 ## 1.3.0 — icons and optional mod artwork (in-game test build)
 
 - Bundle 20 pinned Tabler icons and an ECHO mark as PNG resources, with their
