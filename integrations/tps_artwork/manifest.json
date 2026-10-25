@@ -1,0 +1,7 @@
+{
+  "base_bundle": "BL4_ECHO_Mod_Menu_v100_3_Native_Tag_Config_QA.zip",
+  "base_echo_menu_sha256": "228d1736568ac82a2390a10601e99cfbf8a1c3db7c6c84deb045fda2cf3dbe00",
+  "echo_menu_sha256": "610abd21d3ae66819d8aecd2c2f17040934c45118d3d942f6122d82a51593c6d",
+  "logo_sha256": "4d7259d72052512fb0d81d91ab257bf62824876166d2dd6740372b75df4cc3b0",
+  "scope": "Artwork declaration only; TPS provider/settings/gameplay unchanged"
+}
